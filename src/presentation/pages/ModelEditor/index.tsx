@@ -3,7 +3,9 @@ import type { ChangeEvent, JSX } from 'react'
 import { getModelBySlug } from '../../../data'
 import { Button } from '../../components/ui'
 import { ParameterForm } from '../../components/ParameterForm'
+import { ThreePreview } from '../../components/ThreePreview'
 import { useParameterForm } from '../../hooks/useParameterForm'
+import { useModelGenerator } from '../../hooks/useModelGenerator'
 import { ACCEPTED_IMAGE_TYPES, MAX_IMAGE_SIZE_BYTES } from '../../../shared/constants'
 import type { Model, ParameterValue } from '../../../shared/types'
 
@@ -18,9 +20,7 @@ interface ImageUploadProps {
 }
 
 function useImagePreview(file: File | null): string | null {
-  // Cria a URL apenas quando o arquivo muda (não em todo render)
   const url = useMemo(() => (file ? URL.createObjectURL(file) : null), [file])
-  // Revoga a URL anterior quando ela muda ou o componente desmonta
   useEffect(() => () => { if (url) URL.revokeObjectURL(url) }, [url])
   return url
 }
@@ -78,11 +78,21 @@ interface FormPanelProps {
   values: Record<string, ParameterValue>
   imageFile: File | null
   needsImage: boolean
+  isLoading: boolean
+  canGenerate: boolean
+  errorMsg: string | null
+  stlReady: boolean
   onValueChange: (key: string, value: ParameterValue) => void
   onImageChange: (file: File | null) => void
+  onGenerate: () => void
+  onDownload: () => void
 }
 
-function FormPanel({ model, values, imageFile, needsImage, onValueChange, onImageChange }: FormPanelProps): JSX.Element {
+function FormPanel({
+  model, values, imageFile, needsImage,
+  isLoading, canGenerate, errorMsg, stlReady,
+  onValueChange, onImageChange, onGenerate, onDownload,
+}: FormPanelProps): JSX.Element {
   return (
     <div className="space-y-6 rounded-xl border border-zinc-800 bg-zinc-900 p-6">
       <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-widest">Parâmetros</h2>
@@ -90,25 +100,24 @@ function FormPanel({ model, values, imageFile, needsImage, onValueChange, onImag
         <ImageUpload imageFile={imageFile} onFileSelect={onImageChange} />
       )}
       <ParameterForm parameters={model.parameters} values={values} onChange={onValueChange} />
-      <Button className="w-full" disabled>
-        Gerar e Baixar STL
-      </Button>
-    </div>
-  )
-}
 
-function PreviewPanel(): JSX.Element {
-  return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900 flex items-center justify-center min-h-96 lg:min-h-full">
-      <div className="text-center space-y-3">
-        <div className="w-20 h-20 rounded-xl bg-zinc-800 mx-auto flex items-center justify-center">
-          <svg width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-            <path d="M16 4L28 11V21L16 28L4 21V11L16 4Z" stroke="#52525b" strokeWidth="1.5" strokeLinejoin="round" />
-            <path d="M16 4V28M4 11L28 11M4 21L28 21" stroke="#3f3f46" strokeWidth="1" />
-          </svg>
-        </div>
-        <p className="text-zinc-600 text-sm">Preview 3D — próxima etapa</p>
-      </div>
+      {errorMsg && (
+        <p className="text-red-400 text-sm rounded-lg bg-red-900/20 px-3 py-2">{errorMsg}</p>
+      )}
+
+      <Button
+        className="w-full"
+        disabled={!canGenerate || isLoading}
+        onClick={onGenerate}
+      >
+        {isLoading ? 'Gerando…' : 'Gerar Preview'}
+      </Button>
+
+      {stlReady && (
+        <Button className="w-full" variant="secondary" onClick={onDownload}>
+          Baixar STL
+        </Button>
+      )}
     </div>
   )
 }
@@ -116,9 +125,14 @@ function PreviewPanel(): JSX.Element {
 export function ModelEditor({ slug, onBack }: ModelEditorProps): JSX.Element {
   const model = getModelBySlug(slug)
   const { values, imageFile, setValue, setImageFile } = useParameterForm(model?.parameters ?? [])
+  const { stlBuffer, isLoading, error, generate, download } = useModelGenerator(model, values, imageFile)
+
   const needsImage =
     model?.renderStrategy.type === 'three-extrude' &&
     model.renderStrategy.svgSource === 'image'
+
+  const canGenerate = !!model && (!needsImage || !!imageFile)
+  const previewColor = typeof values.color === 'string' ? values.color : '#e07b54'
 
   if (!model) {
     return (
@@ -144,10 +158,16 @@ export function ModelEditor({ slug, onBack }: ModelEditorProps): JSX.Element {
           values={values}
           imageFile={imageFile}
           needsImage={needsImage}
+          isLoading={isLoading}
+          canGenerate={canGenerate}
+          errorMsg={error}
+          stlReady={!!stlBuffer}
           onValueChange={setValue}
           onImageChange={setImageFile}
+          onGenerate={generate}
+          onDownload={download}
         />
-        <PreviewPanel />
+        <ThreePreview stlBuffer={stlBuffer} color={previewColor} />
       </div>
     </main>
   )
