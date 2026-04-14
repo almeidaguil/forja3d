@@ -1,6 +1,9 @@
 import * as THREE from 'three'
 import { STLExporter } from 'three/addons/exporters/STLExporter.js'
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js'
+// @ts-expect-error clipper-lib has no TypeScript declarations
+import ClipperLib from 'clipper-lib'
+import { Brush, Evaluator, SUBTRACTION, ADDITION } from 'three-bvh-csg'
 import type { ExtrudeConfig, GeometryMode, IGeometryBuilder } from '../../application/ports/IGeometryBuilder'
 
 type Pt = [number, number]
@@ -17,61 +20,60 @@ function parseSimplePath(d: string): Pt[] {
   return pts
 }
 
-function normalize(v: Pt): Pt { const l = Math.sqrt(v[0] ** 2 + v[1] ** 2); return l > 0 ? [v[0] / l, v[1] / l] : [0, 0] }
+const CLIP_SCALE = 1000
 
 /**
- * Inward polygon offset for a CW polygon in SVG Y-down coordinates.
- *
- * Inward normal for CW / Y-down: rotate edge 90° CCW → [-ey, ex]
- *
- * Uses BEVEL join (move each vertex d mm along the bisector of the two adjacent
- * inward normals). Unlike miter join, bevel join never exceeds d mm displacement,
- * so the inner path can never self-intersect — critical for concave shapes like
- * a cookie-cutter outline with a narrow neck.
+ * Robust inward polygon offset using ClipperLib.ClipperOffset.
+ * Returns an array of result paths (may be multiple when thin features split).
  */
-function offsetPolygon(pts: Pt[], d: number): Pt[] {
-  const n = pts.length
-  return pts.map((curr, i) => {
-    const prev = pts[(i - 1 + n) % n]
-    const next = pts[(i + 1) % n]
+function inwardOffset(pts: Pt[], d: number): Pt[][] {
+  const path = pts.map(([x, y]) => ({
+    X: Math.round(x * CLIP_SCALE),
+    Y: Math.round(y * CLIP_SCALE),
+  }))
+  const co = new ClipperLib.ClipperOffset()
+  co.AddPath(path, ClipperLib.JoinType.jtRound, ClipperLib.EndType.etClosedPolygon)
+  const solution: Array<Array<{ X: number; Y: number }>> = []
+  co.Execute(solution, -d * CLIP_SCALE)
+  return solution.map(p => p.map(({ X, Y }) => [X / CLIP_SCALE, Y / CLIP_SCALE] as Pt))
+}
 
-    const e1 = normalize([curr[0] - prev[0], curr[1] - prev[1]])
-    const e2 = normalize([next[0] - curr[0], next[1] - curr[1]])
+function polyArea(pts: Pt[]): number {
+  let s = 0
+  for (let i = 0; i < pts.length; i++) {
+    const j = (i + 1) % pts.length
+    s += pts[i][0] * pts[j][1] - pts[j][0] * pts[i][1]
+  }
+  return Math.abs(s) / 2
+}
 
-    // Inward normals for CW / Y-down: [-ey, ex]
-    const in1: Pt = [-e1[1], e1[0]]
-    const in2: Pt = [-e2[1], e2[0]]
+/** Extrude a closed polygon into a solid THREE.BufferGeometry */
+function extrudeSolid(pts: Pt[], depth: number): THREE.BufferGeometry {
+  const shape = new THREE.Shape()
+  shape.moveTo(pts[0][0], pts[0][1])
+  for (let i = 1; i < pts.length; i++) shape.lineTo(pts[i][0], pts[i][1])
+  shape.closePath()
+  return new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false })
+}
 
-    // Bevel join: move vertex d mm along the bisector direction
-    const bisector = normalize([in1[0] + in2[0], in1[1] + in2[1]])
-    return [curr[0] + bisector[0] * d, curr[1] + bisector[1] * d]
-  })
+/** Create a Brush from a polygon extrusion, ready for CSG operations */
+function makeBrush(pts: Pt[], depth: number, zOffset = 0): Brush {
+  const geo = extrudeSolid(pts, depth)
+  if (zOffset !== 0) geo.translate(0, 0, zOffset)
+  const brush = new Brush(geo)
+  brush.updateMatrixWorld()
+  return brush
 }
 
 /**
- * Build a THREE.Shape from an outer boundary and an optional hole.
- *
- * Winding convention (Y-down pixel / mm space):
- *   Outer path from tracer: CW in Y-down = CCW in standard math (positive shoelace area)
- *   → correct winding for Three.js / earcut outer shape ✓
- *
- *   Inner path from offsetPolygon: also CW in Y-down = CCW in standard math
- *   → earcut requires holes to be CW in standard math, so we REVERSE before passing ✓
+ * CSG subtraction: extrude outer and inner polygons as solids, then subtract.
+ * The inner solid is made slightly taller (±0.1mm) to guarantee a clean boolean
+ * cut at both caps without coplanar-face precision issues.
  */
-function buildShape(outer: Pt[], hole: Pt[]): THREE.Shape {
-  const shape = new THREE.Shape()
-  shape.moveTo(outer[0][0], outer[0][1])
-  for (let i = 1; i < outer.length; i++) shape.lineTo(outer[i][0], outer[i][1])
-  shape.closePath()
-
-  if (hole.length >= 3) {
-    const holePath = new THREE.Path()
-    holePath.moveTo(hole[0][0], hole[0][1])
-    for (let i = 1; i < hole.length; i++) holePath.lineTo(hole[i][0], hole[i][1])
-    holePath.closePath()
-    shape.holes.push(holePath)
-  }
-  return shape
+function csgSubtract(evaluator: Evaluator, outerPts: Pt[], innerPts: Pt[], depth: number): THREE.BufferGeometry {
+  const outerBrush = makeBrush(outerPts, depth)
+  const innerBrush = makeBrush(innerPts, depth + 0.2, -0.1)
+  return evaluator.evaluate(outerBrush, innerBrush, SUBTRACTION).geometry
 }
 
 export class ThreeGeometryBuilder implements IGeometryBuilder {
@@ -82,7 +84,7 @@ export class ThreeGeometryBuilder implements IGeometryBuilder {
       depth,
       wallThickness = 1.5,
       mode = 'solid' as GeometryMode,
-      stampDepth = depth,  // stamp same height as cutter by default
+      stampDepth = 3,
     } = config
 
     // --- Parse path and scale to mm ---
@@ -99,37 +101,50 @@ export class ThreeGeometryBuilder implements IGeometryBuilder {
 
     // --- Build geometry in mm ---
     let geometry: THREE.BufferGeometry
+    const evaluator = new Evaluator()
 
     if (mode === 'cutter' || mode === 'cutter-stamp') {
-      // Inner path: offset inward by wallThickness (bevel join, never self-intersects)
-      const innerMm = offsetPolygon(outerMm, wallThickness)
-      // Reverse inner path → CW in standard math = correct for earcut hole
-      const innerHole = [...innerMm].reverse()
+      const innerPaths = inwardOffset(outerMm, wallThickness)
+      const mainInner = [...innerPaths].sort((a, b) => polyArea(b) - polyArea(a))[0] ?? []
 
-      // Piece 1: hollow cutter ring
-      const ringShape = buildShape(outerMm, innerHole)
-      const ringGeom = new THREE.ExtrudeGeometry(ringShape, { depth, bevelEnabled: false })
-
-      if (mode === 'cutter-stamp') {
-        // Piece 2: stamp — the inner contour extruded as a solid disc
-        // Outer boundary = inner offset path → fits inside the ring with wallThickness gap
-        // Height = stampDepth (same as ring by default, user can adjust later)
-        const stampShape = buildShape(innerMm, [])
-        const stampGeom = new THREE.ExtrudeGeometry(stampShape, { depth: stampDepth, bevelEnabled: false })
-
-        // Place stamp to the right of the ring with a 5 mm gap
-        const xMin = Math.min(...outerMm.map(([x]) => x))
-        const xMax = Math.max(...outerMm.map(([x]) => x))
-        stampGeom.translate(xMax - xMin + 5, 0, 0)
-
-        geometry = mergeGeometries([ringGeom, stampGeom])
+      if (mainInner.length < 3) {
+        // Fallback: no usable inner path → extrude solid
+        geometry = extrudeSolid(outerMm, depth)
       } else {
-        geometry = ringGeom
+        // CSG: outer solid minus inner solid = clean hollow ring.
+        // No earcut holes, no cap hacks, no spike artifacts.
+        const ringGeo = csgSubtract(evaluator, outerMm, mainInner, depth)
+
+        if (mode === 'cutter-stamp') {
+          // Stamp = solid base disc (stampDepth) with the ring outline raised
+          // above it by ridgeHeight. This creates visible embossing detail.
+          const ridgeHeight = 1.5
+
+          // Ring outline extends full stamp height (base + ridge)
+          const ringDetailGeo = csgSubtract(evaluator, outerMm, mainInner, stampDepth + ridgeHeight)
+          const ringBrush = new Brush(ringDetailGeo)
+          ringBrush.updateMatrixWorld()
+
+          // Solid base disc fills the interior up to stampDepth
+          const baseBrush = makeBrush(outerMm, stampDepth)
+
+          // Union: base fills the ring's interior at z=0..stampDepth,
+          // ring walls extend above at z=stampDepth..(stampDepth+ridgeHeight)
+          const stampGeo = evaluator.evaluate(baseBrush, ringBrush, ADDITION).geometry
+
+          // Place stamp to the right of the ring with a 5 mm gap
+          const xMin = Math.min(...outerMm.map(([x]) => x))
+          const xMax = Math.max(...outerMm.map(([x]) => x))
+          stampGeo.translate(xMax - xMin + 5, 0, 0)
+
+          geometry = mergeGeometries([ringGeo, stampGeo])
+        } else {
+          geometry = ringGeo
+        }
       }
     } else {
-      // solid mode (stamp model, etc.)
-      const shape = buildShape(outerMm, [])
-      geometry = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false })
+      // Solid mode
+      geometry = extrudeSolid(outerMm, depth)
     }
 
     // Flip Y (SVG Y-down → Three.js Y-up) then center XY

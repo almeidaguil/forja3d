@@ -42,13 +42,22 @@ export async function generateModel(
       if (values.mode === 'Cortador') mode = 'cutter'
       else if (values.mode === 'Cortador + Carimbo') mode = 'cutter-stamp'
 
-      const geometry = deps.geometryBuilder.build({
+      // CookieCad-style profile parameters (optional, builder uses defaults)
+      const tipWidth = typeof values.tipWidth === 'number' ? values.tipWidth : undefined
+      const chamferHeight = typeof values.chamferHeight === 'number' ? values.chamferHeight : undefined
+      const baseWidth = typeof values.baseWidth === 'number' ? values.baseWidth : undefined
+      const baseHeight = typeof values.baseHeight === 'number' ? values.baseHeight : undefined
+
+      const geometry = await deps.geometryBuilder.build({
         pathData: traced.pathData,
         targetSize,
         depth,
         wallThickness,
         mode,
-        stampDepth: 2,
+        tipWidth,
+        chamferHeight,
+        baseWidth,
+        baseHeight,
       })
       return { status: 'success', geometry }
     }
