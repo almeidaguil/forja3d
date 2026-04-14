@@ -1,0 +1,65 @@
+{
+  "id": "stamp",
+  "slug": "stamp",
+  "title": "Carimbo",
+  "description": "Transforme qualquer imagem em um carimbo 3D com relevo. Ideal para argila, pasta americana e tecido.",
+  "category": "stamps",
+  "renderStrategy": {
+    "type": "three-extrude",
+    "svgSource": "image"
+  },
+  "creditsRequired": 1,
+  "parameters": [
+    {
+      "key": "baseHeight",
+      "type": "number",
+      "label": "Altura da base (mm)",
+      "default": 5,
+      "min": 2,
+      "max": 15,
+      "step": 0.5,
+      "unit": "mm"
+    },
+    {
+      "key": "reliefHeight",
+      "type": "number",
+      "label": "Altura do relevo (mm)",
+      "default": 3,
+      "min": 1,
+      "max": 8,
+      "step": 0.5,
+      "unit": "mm"
+    },
+    {
+      "key": "targetSize",
+      "type": "number",
+      "label": "Tamanho alvo (mm)",
+      "default": 60,
+      "min": 20,
+      "max": 150,
+      "step": 5,
+      "unit": "mm"
+    },
+    {
+      "key": "threshold",
+      "type": "number",
+      "label": "Sensibilidade do contorno",
+      "default": 128,
+      "min": 10,
+      "max": 245,
+      "step": 1
+    },
+    {
+      "key": "mirror",
+      "type": "boolean",
+      "label": "Espelhar horizontalmente",
+      "default": true
+    },
+    {
+      "key": "color",
+      "type": "color",
+      "label": "Cor do preview",
+      "default": "#5b8dd9"
+    }
+  ]
+}
