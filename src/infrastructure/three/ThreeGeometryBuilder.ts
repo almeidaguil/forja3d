@@ -17,24 +17,22 @@ function parseSimplePath(d: string): Pt[] {
   return pts
 }
 
-function len2(v: Pt): number { return Math.sqrt(v[0] ** 2 + v[1] ** 2) }
-function normalize(v: Pt): Pt { const l = len2(v); return l > 0 ? [v[0] / l, v[1] / l] : [0, 0] }
-function dot(a: Pt, b: Pt): number { return a[0] * b[0] + a[1] * b[1] }
+function normalize(v: Pt): Pt { const l = Math.sqrt(v[0] ** 2 + v[1] ** 2); return l > 0 ? [v[0] / l, v[1] / l] : [0, 0] }
 
 /**
  * Inward polygon offset for a CW polygon in SVG Y-down coordinates.
- * (Our CanvasImageTracer produces CW paths in pixel Y-down space.)
  *
- * For CW / Y-down, walking the boundary places the interior to the LEFT of travel.
- * Left of direction [ex, ey] = rotate 90° CCW in Y-down = [-ey, ex].
- * Uses miter joins clamped at 4× d to avoid spikes on sharp corners.
+ * Inward normal for CW / Y-down: rotate edge 90° CCW → [-ey, ex]
+ *
+ * Uses BEVEL join (move each vertex d mm along the bisector of the two adjacent
+ * inward normals). Unlike miter join, bevel join never exceeds d mm displacement,
+ * so the inner path can never self-intersect — critical for concave shapes like
+ * a cookie-cutter outline with a narrow neck.
  */
 function offsetPolygon(pts: Pt[], d: number): Pt[] {
   const n = pts.length
-  const result: Pt[] = []
-  for (let i = 0; i < n; i++) {
+  return pts.map((curr, i) => {
     const prev = pts[(i - 1 + n) % n]
-    const curr = pts[i]
     const next = pts[(i + 1) % n]
 
     const e1 = normalize([curr[0] - prev[0], curr[1] - prev[1]])
@@ -44,23 +42,21 @@ function offsetPolygon(pts: Pt[], d: number): Pt[] {
     const in1: Pt = [-e1[1], e1[0]]
     const in2: Pt = [-e2[1], e2[0]]
 
+    // Bevel join: move vertex d mm along the bisector direction
     const bisector = normalize([in1[0] + in2[0], in1[1] + in2[1]])
-    const cosHalf = dot(bisector, in1)
-    const miterDist = Math.abs(cosHalf) > 0.1 ? Math.min(d / cosHalf, d * 4) : d
-
-    result.push([curr[0] + bisector[0] * miterDist, curr[1] + bisector[1] * miterDist])
-  }
-  return result
+    return [curr[0] + bisector[0] * d, curr[1] + bisector[1] * d]
+  })
 }
 
 /**
  * Build a THREE.Shape from an outer boundary and an optional hole.
  *
- * Coordinate convention (Y-down pixel space):
- *   • Outer path from tracer is CW in Y-down = CCW in standard Y-up math
- *     → correct winding for a Three.js/earcut outer shape ✓
- *   • Inner path from offsetPolygon is also CW in Y-down = CCW in Y-up math
- *     → holes need CW in Y-up, so we REVERSE the inner path before passing it ✓
+ * Winding convention (Y-down pixel / mm space):
+ *   Outer path from tracer: CW in Y-down = CCW in standard math (positive shoelace area)
+ *   → correct winding for Three.js / earcut outer shape ✓
+ *
+ *   Inner path from offsetPolygon: also CW in Y-down = CCW in standard math
+ *   → earcut requires holes to be CW in standard math, so we REVERSE before passing ✓
  */
 function buildShape(outer: Pt[], hole: Pt[]): THREE.Shape {
   const shape = new THREE.Shape()
@@ -86,7 +82,7 @@ export class ThreeGeometryBuilder implements IGeometryBuilder {
       depth,
       wallThickness = 1.5,
       mode = 'solid' as GeometryMode,
-      stampDepth = 2,
+      stampDepth = depth,  // stamp same height as cutter by default
     } = config
 
     // --- Parse path and scale to mm ---
@@ -105,27 +101,38 @@ export class ThreeGeometryBuilder implements IGeometryBuilder {
     let geometry: THREE.BufferGeometry
 
     if (mode === 'cutter' || mode === 'cutter-stamp') {
+      // Inner path: offset inward by wallThickness (bevel join, never self-intersects)
       const innerMm = offsetPolygon(outerMm, wallThickness)
-      const innerHole = [...innerMm].reverse() // reverse for CW winding (Three.js hole convention)
+      // Reverse inner path → CW in standard math = correct for earcut hole
+      const innerHole = [...innerMm].reverse()
 
+      // Piece 1: hollow cutter ring
       const ringShape = buildShape(outerMm, innerHole)
       const ringGeom = new THREE.ExtrudeGeometry(ringShape, { depth, bevelEnabled: false })
 
       if (mode === 'cutter-stamp') {
-        // Stamp face: solid inner area at the base of the cutter
+        // Piece 2: stamp — the inner contour extruded as a solid disc
+        // Outer boundary = inner offset path → fits inside the ring with wallThickness gap
+        // Height = stampDepth (same as ring by default, user can adjust later)
         const stampShape = buildShape(innerMm, [])
         const stampGeom = new THREE.ExtrudeGeometry(stampShape, { depth: stampDepth, bevelEnabled: false })
+
+        // Place stamp to the right of the ring with a 5 mm gap
+        const xMin = Math.min(...outerMm.map(([x]) => x))
+        const xMax = Math.max(...outerMm.map(([x]) => x))
+        stampGeom.translate(xMax - xMin + 5, 0, 0)
+
         geometry = mergeGeometries([ringGeom, stampGeom])
       } else {
         geometry = ringGeom
       }
     } else {
-      // solid mode (stamps, etc.)
+      // solid mode (stamp model, etc.)
       const shape = buildShape(outerMm, [])
       geometry = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false })
     }
 
-    // Flip Y (SVG Y-down → Three.js Y-up) and center
+    // Flip Y (SVG Y-down → Three.js Y-up) then center XY
     geometry.applyMatrix4(new THREE.Matrix4().makeScale(1, -1, 1))
     geometry.computeBoundingBox()
     const center = new THREE.Vector3()
