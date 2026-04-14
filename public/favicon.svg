@@ -1,5 +1,19 @@
 <svg viewBox="0 0 40 44" xmlns="http://www.w3.org/2000/svg">
-  <polygon points="20,2 38,12 20,22 2,12" fill="#fb923c"/>
-  <polygon points="2,12 20,22 20,42 2,32" fill="#c2410c"/>
-  <polygon points="20,22 38,12 38,32 20,42" fill="#ea580c"/>
+  <defs>
+    <linearGradient id="fav-top" gradientUnits="userSpaceOnUse" x1="2" y1="2" x2="38" y2="22">
+      <stop offset="0%" stop-color="#fde68a"/>
+      <stop offset="100%" stop-color="#f97316"/>
+    </linearGradient>
+    <linearGradient id="fav-left" gradientUnits="userSpaceOnUse" x1="2" y1="12" x2="20" y2="42">
+      <stop offset="0%" stop-color="#c2410c"/>
+      <stop offset="100%" stop-color="#7c2d12"/>
+    </linearGradient>
+    <linearGradient id="fav-right" gradientUnits="userSpaceOnUse" x1="20" y1="12" x2="38" y2="42">
+      <stop offset="0%" stop-color="#ea580c"/>
+      <stop offset="100%" stop-color="#9a3412"/>
+    </linearGradient>
+  </defs>
+  <polygon points="20,2 38,12 20,22 2,12"  fill="url(#fav-top)"/>
+  <polygon points="2,12 20,22 20,42 2,32"  fill="url(#fav-left)"/>
+  <polygon points="20,22 38,12 38,32 20,42" fill="url(#fav-right)"/>
 </svg>
