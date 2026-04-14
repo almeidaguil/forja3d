@@ -1,0 +1,14 @@
+<svg viewBox="0 0 200 44" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Forja3D">
+  <!-- Icon: isometric cube -->
+  <polygon points="22,2 40,12 22,22 4,12" fill="#fb923c"/>
+  <polygon points="4,12 22,22 22,42 4,32" fill="#c2410c"/>
+  <polygon points="22,22 40,12 40,32 22,42" fill="#ea580c"/>
+  <polyline points="22,2 40,12 40,32 22,42 4,32 4,12 22,2" fill="none" stroke="#0f0f0f" stroke-width="0.5" stroke-opacity="0.3"/>
+  <line x1="22" y1="22" x2="22" y2="42" stroke="#0f0f0f" stroke-width="0.5" stroke-opacity="0.3"/>
+  <line x1="22" y1="22" x2="40" y2="12" stroke="#0f0f0f" stroke-width="0.5" stroke-opacity="0.3"/>
+  <line x1="22" y1="22" x2="4" y2="12" stroke="#0f0f0f" stroke-width="0.5" stroke-opacity="0.3"/>
+
+  <!-- Wordmark -->
+  <text x="52" y="30" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="700" letter-spacing="-0.5" fill="#f0f0f0">Forja</text>
+  <text x="107" y="30" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="700" letter-spacing="-0.5" fill="#fb923c">3D</text>
+</svg>

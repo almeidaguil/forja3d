@@ -1,91 +1,93 @@
 # Forja3D
 
-**Forja3D** is a browser-based parametric 3D model generator for 3D printing. No installation required, no account needed — everything runs directly in your browser.
+**Forja3D** é um gerador de modelos 3D paramétricos que roda diretamente no navegador. Sem instalação, sem cadastro — tudo funciona no cliente.
 
-## What it does
+## O que faz
 
-Forja3D lets you create customized, print-ready 3D models by adjusting parameters or uploading images. Download your model as an `.stl` file and send it straight to your slicer.
+O Forja3D permite criar modelos 3D personalizados e prontos para impressão, ajustando parâmetros ou enviando imagens. Baixe o arquivo `.stl` e envie direto para o seu fatiador.
 
-### Available model types
+### Tipos de modelos disponíveis
 
-| Category | Description |
+| Categoria | Descrição |
 |---|---|
-| **Cookie Cutters** | Upload any image and generate a precise cookie cutter from its silhouette |
-| **Stamps** | Convert image outlines into 3D stamps (raised or recessed relief) |
-| **Keychains** | Personalized keychains with custom text and shapes |
-| **Word Signs** | Layered 3D signs with customizable fonts and dimensions |
-| **Big Letters** | Large standalone letters and names for decoration |
+| **Cortadores de Biscoito** | Envie qualquer imagem e gere um cortador a partir do contorno |
+| **Carimbos** | Converta o contorno de uma imagem em um carimbo 3D com relevo |
+| **Chaveiros** | Chaveiros personalizados com texto e formas customizáveis |
+| **Letreiros** | Letreiros 3D em camadas com fontes e dimensões configuráveis |
+| **Letras Grandes** | Letras e nomes em 3D para decoração |
 
-### Features
+### Funcionalidades
 
-- **Image-to-3D**: Upload a PNG or JPG image and Forja3D traces its outline automatically
-- **Live 3D preview**: See your model rendered in real time, with color, before downloading
-- **Fully parametric**: Control dimensions, thickness, border offset, font, and more
-- **No backend required**: All rendering runs client-side via WebAssembly and Three.js
-- **STL export**: Download print-ready `.stl` files compatible with any slicer
+- **Imagem para 3D**: envie um PNG ou JPG e o Forja3D traça o contorno automaticamente
+- **Preview 3D em tempo real**: veja o modelo renderizado com cor antes de baixar
+- **Totalmente paramétrico**: controle dimensões, espessura, margem, fonte e mais
+- **Sem backend**: toda a renderização roda no cliente via WebAssembly e Three.js
+- **Exportação STL**: baixe arquivos `.stl` compatíveis com qualquer fatiador
 
-## Tech stack
+## Stack técnica
 
-- [React](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/) — UI layer
-- [Vite](https://vitejs.dev/) — build tool and dev server
-- [Three.js](https://threejs.org/) — 3D rendering and preview
-- [OpenSCAD WASM](https://openscad.org/) — parametric model compilation in the browser
-- [Potrace](https://potrace.sourceforge.net/) — bitmap-to-vector tracing for image-based models
-- [Tailwind CSS](https://tailwindcss.com/) — styling
-- [GitHub Pages](https://pages.github.com/) — hosting
+- [React](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/) — camada de UI
+- [Vite](https://vitejs.dev/) — ferramenta de build e servidor de desenvolvimento
+- [Three.js](https://threejs.org/) — renderização e preview 3D
+- [OpenSCAD WASM](https://openscad.org/) — compilação paramétrica de modelos no navegador
+- [Potrace](https://potrace.sourceforge.net/) — vetorização de imagens para modelos baseados em imagem
+- [Tailwind CSS](https://tailwindcss.com/) — estilização
+- [GitHub Pages](https://pages.github.com/) — hospedagem
 
-## Architecture
+## Arquitetura
 
-The project follows **Clean Architecture** and **Domain-Driven Design** principles:
+O projeto segue os princípios de **Arquitetura Limpa** e **Domain-Driven Design**:
 
 ```
 src/
-├── domain/           # Core business logic — entities, value objects, domain services
-├── application/      # Use cases — orchestrates domain logic
-├── infrastructure/   # External adapters — OpenSCAD WASM, Three.js, image tracer
-├── presentation/     # React components, pages, hooks
-└── shared/           # Cross-cutting types and utilities
+├── domain/           # Lógica de negócio central — entidades, objetos de valor, serviços de domínio
+├── application/      # Casos de uso — orquestra a lógica de domínio
+├── infrastructure/   # Adaptadores externos — OpenSCAD WASM, Three.js, traçador de imagem
+├── presentation/     # Componentes React, páginas, hooks
+└── shared/           # Tipos e utilitários transversais
 ```
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full architectural documentation.
+Veja [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) para a documentação arquitetural completa.
 
-## Running locally
+## Rodando localmente
 
 ```bash
-# Install dependencies
+# Instalar dependências
 npm install
 
-# Start development server
+# Iniciar servidor de desenvolvimento
 npm run dev
 
-# Build for production
+# Build para produção
 npm run build
 
-# Preview production build
+# Visualizar build de produção
 npm run preview
 ```
 
-## Deployment
+Veja o [Guia de Instalação](docs/SETUP.md) para instruções detalhadas em macOS, Linux e Windows.
 
-The project deploys automatically to [GitHub Pages](https://almeidaguil.github.io/forja3d/) on every push to `main` via GitHub Actions.
+## Deploy
 
-To deploy manually:
+O projeto é publicado automaticamente no [GitHub Pages](https://almeidaguil.github.io/forja3d/) a cada push na `main` via GitHub Actions.
+
+Para publicar manualmente:
 
 ```bash
 npm run build && npm run deploy
 ```
 
-## Branch strategy
+## Fluxo de branches
 
-| Branch | Purpose |
+| Branch | Finalidade |
 |---|---|
-| `main` | Stable, production-ready. Protected — no direct commits. |
-| `develop` | Integration branch. Merge features here before `main`. |
-| `feature/<name>` | New features or enhancements |
-| `fix/<name>` | Bug fixes |
+| `main` | Estável, pronto para produção. Protegida — sem commits diretos. |
+| `develop` | Integração. Branches de feature são mergeadas aqui. |
+| `feature/<nome>` | Novas funcionalidades ou melhorias |
+| `fix/<nome>` | Correções de bugs |
 
-All commits follow the [Conventional Commits](https://www.conventionalcommits.org/) specification.
+Todos os commits seguem a especificação [Conventional Commits](https://www.conventionalcommits.org/).
 
-## License
+## Licença
 
 MIT

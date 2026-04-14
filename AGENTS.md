@@ -1,170 +1,161 @@
 # AGENTS.md — Forja3D
 
-Instructions for AI agents working on this codebase.
+Instruções para agentes de IA que trabalham neste repositório.
 
 ---
 
-## Project overview
+## Visão geral do projeto
 
-**Forja3D** is a browser-based parametric 3D model generator built with React + TypeScript + Vite. It runs entirely client-side — no backend, no authentication in V1. All 3D model generation happens via OpenSCAD WASM or Three.js geometry.
+**Forja3D** é um gerador de modelos 3D paramétricos que roda no navegador, construído com React + TypeScript + Vite. Funciona totalmente no cliente — sem backend, sem autenticação na V1. Toda geração de modelos 3D acontece via OpenSCAD WASM ou geometria Three.js.
 
-See [README.md](README.md) for the user-facing description.
+Veja o [README.md](README.md) para a descrição voltada ao usuário.
 
 ---
 
-## Architecture rules (non-negotiable)
+## Regras de arquitetura (inegociáveis)
 
-This project follows **Clean Architecture** + **Domain-Driven Design**. Respect these layer boundaries strictly:
+Este projeto segue **Arquitetura Limpa** + **Domain-Driven Design**. Respeite rigorosamente os limites entre camadas:
 
 ```
-domain → has no dependencies on any other layer
-application → depends only on domain
-infrastructure → depends on domain and application (implements interfaces)
-presentation → depends on application (never on infrastructure directly)
-shared → depended on by all layers
+domain → não possui dependências de nenhuma outra camada
+application → depende apenas do domain
+infrastructure → depende de domain e application (implementa interfaces)
+presentation → depende de application (nunca de infrastructure diretamente)
+shared → utilizado por todas as camadas
 ```
 
-- **Never** import infrastructure directly from presentation
-- **Never** import React from domain or application layers
-- **Never** put business logic inside React components — use application use cases
-- Interfaces (ports) are defined in `application/` or `domain/`; implementations (adapters) are in `infrastructure/`
+- **Nunca** importe infrastructure diretamente da presentation
+- **Nunca** importe React nas camadas domain ou application
+- **Nunca** coloque lógica de negócio dentro de componentes React — use casos de uso da application
+- Interfaces (ports) são definidas em `application/` ou `domain/`; implementações (adapters) ficam em `infrastructure/`
 
 ---
 
-## Folder structure
+## Estrutura de pastas
 
 ```
 src/
 ├── domain/
-│   ├── model/              # Model entity, value objects
-│   ├── parameter/          # Parameter types and validation
+│   ├── model/              # Entidade Model, objetos de valor
+│   ├── parameter/          # Tipos e validação de parâmetros
 │   └── generation/         # GenerationResult, GenerationStatus
 ├── application/
 │   └── useCases/
-│       ├── generateModel/  # Orchestrates WASM/Three.js generation
-│       ├── traceImage/     # Orchestrates image → SVG tracing
-│       └── exportStl/      # STL export logic
+│       ├── generateModel/  # Orquestra geração via WASM/Three.js
+│       ├── traceImage/     # Orquestra traçado imagem → SVG
+│       └── exportStl/      # Lógica de exportação STL
 ├── infrastructure/
-│   ├── openscad/           # OpenSCAD WASM adapter
-│   ├── tracer/             # Image tracing adapter (Potrace/canvas)
-│   ├── three/              # Three.js geometry builder and STL exporter
-│   └── storage/            # File I/O helpers
+│   ├── openscad/           # Adapter OpenSCAD WASM
+│   ├── tracer/             # Adapter de traçado de imagem (Canvas/Potrace)
+│   ├── three/              # Builder de geometria Three.js e exportador STL
+│   └── storage/            # Helpers de I/O de arquivo
 ├── presentation/
 │   ├── components/
-│   │   ├── ModelViewer/    # Three.js canvas component
-│   │   ├── ParameterForm/  # Dynamic parameter form
-│   │   ├── ImageUpload/    # Drag-and-drop image input
-│   │   ├── ModelCard/      # Model listing card
-│   │   └── ui/             # Generic UI primitives (Button, Input, etc.)
+│   │   ├── ModelViewer/    # Componente canvas Three.js
+│   │   ├── ParameterForm/  # Formulário dinâmico de parâmetros
+│   │   ├── ImageUpload/    # Input de imagem com drag-and-drop
+│   │   ├── ModelCard/      # Card de listagem de modelos
+│   │   └── ui/             # Primitivos de UI genéricos (Button, Input, etc.)
 │   ├── pages/
-│   │   ├── Home/           # Model catalog page
-│   │   └── ModelEditor/    # Editor page with form + preview
-│   └── hooks/              # Custom React hooks (useModelGenerator, etc.)
+│   │   ├── Home/           # Página de catálogo de modelos
+│   │   └── ModelEditor/    # Página do editor com formulário + preview
+│   └── hooks/              # Hooks React customizados (useModelGenerator, etc.)
 ├── shared/
-│   ├── types/              # Global TypeScript types
-│   ├── utils/              # Pure utility functions
-│   └── constants/          # App-wide constants
+│   ├── types/              # Tipos TypeScript globais
+│   ├── utils/              # Funções utilitárias puras
+│   └── constants/          # Constantes globais da aplicação
 └── data/
-    └── models/             # JSON configs for each available model
+    └── models/             # Configs JSON para cada modelo disponível
 ```
 
 ---
 
-## Code standards
+## Padrões de código
 
-### General
-- Language: **TypeScript** — strict mode, no `any`
-- Style: **Tailwind CSS** — no inline styles, no CSS modules
-- Follow **Clean Code** principles: functions do one thing, clear naming, no magic numbers
-- Maximum function length: 30 lines. Break down if longer
-- No commented-out code — delete it
-- No `console.log` in production code — use a logger or remove
+### Geral
+- Linguagem: **TypeScript** — modo strict, sem `any`
+- Estilo: **Tailwind CSS** — sem estilos inline, sem CSS modules
+- Siga os princípios do **Clean Code**: funções fazem uma coisa, nomes claros, sem números mágicos
+- Tamanho máximo de função: 30 linhas. Quebre se for maior
+- Sem código comentado — delete
+- Sem `console.log` em código de produção — use um logger ou remova
 
-### Naming conventions
-- Files: `camelCase.ts` for modules, `PascalCase.tsx` for React components
-- Directories: `camelCase/`
-- Interfaces: prefix with `I` only for ports/adapters (e.g., `IModelRenderer`)
-- Types: `PascalCase`
-- Constants: `SCREAMING_SNAKE_CASE`
+### Convenções de nomenclatura
+- Arquivos: `camelCase.ts` para módulos, `PascalCase.tsx` para componentes React
+- Diretórios: `camelCase/`
+- Interfaces: prefixo `I` apenas para ports/adapters (ex: `IModelRenderer`)
+- Tipos: `PascalCase`
+- Constantes: `SCREAMING_SNAKE_CASE`
 
-### React components
-- Functional components only — no class components
-- Each component in its own directory with an `index.tsx`
-- Props typed with a named interface in the same file
-- No logic beyond rendering and event delegation inside components — delegate to hooks
+### Componentes React
+- Apenas componentes funcionais — sem class components
+- Cada componente em seu próprio diretório com `index.tsx`
+- Props tipadas com uma interface nomeada no mesmo arquivo
+- Sem lógica além de renderização e delegação de eventos — delegar para hooks
 
-### Domain
-- Entities are immutable value objects where possible
-- Validate at entity construction, not at use-site
-- Domain layer must have zero external dependencies
+### Domínio
+- Entidades são objetos de valor imutáveis sempre que possível
+- Validação na construção da entidade, não no ponto de uso
+- A camada de domínio deve ter zero dependências externas
 
 ---
 
-## Git workflow
+## Fluxo Git
 
-**Never commit directly to `main` or `develop`.**
+**Nunca faça commit diretamente em `main` ou `develop`.**
 
-| Branch | Purpose |
+| Branch | Finalidade |
 |---|---|
-| `main` | Protected. Only merged from `develop` via PR after review. |
-| `develop` | Integration. Merge feature branches here. |
-| `feature/<name>` | New features |
-| `fix/<name>` | Bug fixes |
-| `docs/<name>` | Documentation-only changes |
-| `chore/<name>` | Tooling, deps, config |
+| `main` | Protegida. Apenas merge de `develop` via PR após revisão. |
+| `develop` | Integração. Branches de feature são mergeadas aqui. |
+| `feature/<nome>` | Novas funcionalidades |
+| `fix/<nome>` | Correções de bugs |
+| `docs/<nome>` | Alterações apenas de documentação |
+| `chore/<nome>` | Ferramentas, dependências, configuração |
 
-### Commit messages — Conventional Commits
+### Mensagens de commit — Conventional Commits
 
-Format: `<type>(<scope>): <subject>`
+Formato: `<tipo>(<escopo>): <assunto>`
 
-Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `style`
+Tipos: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `style`
 
-Examples:
+Exemplos:
 ```
-feat(cookie-cutter): add image upload and contour tracing
-fix(model-viewer): correct camera position on model update
-docs(architecture): add ADR for Three.js geometry approach
-refactor(domain): extract parameter validation to value object
+feat(cortador): adiciona upload de imagem e traçado de contorno
+fix(model-viewer): corrige posição da câmera ao atualizar modelo
+docs(arquitetura): adiciona ADR para abordagem de geometria Three.js
+refactor(domain): extrai validação de parâmetro para objeto de valor
 ```
 
 ---
 
-## V2 awareness
+## Consciência sobre a V2
 
-As you work on V1 features, always check if your implementation has implications for V2. If it does:
-- Note it in the relevant section of [docs/V2_ROADMAP.md](docs/V2_ROADMAP.md)
-- Leave a `// V2: <note>` comment near the relevant code
+Ao trabalhar em features da V1, sempre verifique se sua implementação tem implicações para a V2. Se tiver:
+- Registre na seção relevante de [docs/V2_ROADMAP.md](docs/V2_ROADMAP.md)
+- Deixe um comentário `// V2: <nota>` próximo ao código relevante
 
-V2 will introduce: authentication, credit system, server-side rendering, Stripe payments. Design V1 code to be replaceable, not rewritten.
-
----
-
-## Key technical decisions
-
-1. **No backend in V1** — all rendering is client-side (OpenSCAD WASM + Three.js)
-2. **OpenSCAD WASM** — for parametric models with text/geometry (keychains, signs)
-3. **Three.js ExtrudeGeometry** — for image-based models (cookie cutters, stamps); faster than WASM
-4. **Potrace / Canvas API** — for image-to-SVG tracing in the browser
-5. **STL export** — via Three.js `STLExporter`; 3MF support is a V2 concern
-6. **GitHub Pages** — static hosting, no server required
-
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for full ADR details.
+A V2 introduzirá: autenticação, sistema de créditos, renderização server-side, pagamentos com Stripe. Projete o código da V1 para ser substituível, não reescrito.
 
 ---
 
-## Testing guidelines (future)
+## Decisões técnicas principais
 
-- Unit tests: Vitest — domain and application layers only
-- No tests for infrastructure adapters in V1 (too tightly coupled to WASM/Three.js)
-- No snapshot tests — behavior tests only
-- Test file next to the module: `model.test.ts` alongside `model.ts`
+1. **Sem backend na V1** — toda a renderização é client-side (OpenSCAD WASM + Three.js)
+2. **OpenSCAD WASM** — para modelos paramétricos com texto/geometria (chaveiros, letreiros)
+3. **Three.js ExtrudeGeometry** — para modelos baseados em imagem (cortadores, carimbos); mais rápido que WASM
+4. **API Canvas / Potrace** — para traçado imagem→SVG no navegador
+5. **Exportação STL** — via `STLExporter` do Three.js; suporte a 3MF é questão da V2
+6. **GitHub Pages** — hospedagem estática, sem servidor necessário
+
+Veja [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) para detalhes completos dos ADRs.
 
 ---
 
-## What to avoid
+## O que evitar
 
-- Do not add backend code, servers, or environment variables pointing to external APIs in V1
-- Do not add authentication code in V1
-- Do not use `any` in TypeScript — use `unknown` and narrow types
-- Do not import heavy dependencies in the domain layer
-- Do not put `.scad` file content inline in components — keep in `src/data/models/`
+- Não adicione código de backend, servidores ou variáveis de ambiente apontando para APIs externas na V1
+- Não adicione código de autenticação na V1
+- Não use `any` em TypeScript — use `unknown` e narrowing de tipos
+- Não importe dependências pesadas na camada de domínio
+- Não coloque conteúdo de arquivos `.scad` inline em componentes — mantenha em `src/data/models/`

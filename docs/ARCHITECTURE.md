@@ -1,12 +1,12 @@
-# Architecture — Forja3D
+# Arquitetura — Forja3D
 
-## Overview
+## Visão geral
 
-Forja3D follows **Clean Architecture** (Robert C. Martin) combined with **Domain-Driven Design** principles. The goal is a codebase where business rules are independent of UI frameworks, rendering libraries, and hosting constraints.
+O Forja3D segue os princípios de **Clean Architecture** (Robert C. Martin) combinados com **Domain-Driven Design**. O objetivo é uma base de código onde as regras de negócio são independentes de frameworks de UI, bibliotecas de renderização e restrições de hospedagem.
 
 ---
 
-## Layer diagram
+## Diagrama de camadas
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -21,18 +21,18 @@ Forja3D follows **Clean Architecture** (Robert C. Martin) combined with **Domain
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-Dependency rule: **arrows point inward only**. Inner layers know nothing about outer layers.
+Regra de dependência: **as setas apontam apenas para dentro**. As camadas internas não conhecem as camadas externas.
 
 ---
 
-## Domain layer (`src/domain/`)
+## Camada de domínio (`src/domain/`)
 
-The heart of the application. Contains pure TypeScript — no framework, no library imports.
+O coração da aplicação. Contém TypeScript puro — sem framework, sem importações de bibliotecas externas.
 
-### Key entities and value objects
+### Entidades e objetos de valor principais
 
 #### `Model`
-Represents a generatable 3D model template.
+Representa um template de modelo 3D gerado.
 
 ```typescript
 interface Model {
@@ -46,7 +46,7 @@ interface Model {
 ```
 
 #### `Parameter`
-Describes a single configurable input for a model.
+Descreve uma única entrada configurável de um modelo.
 
 ```typescript
 type ParameterType = 'string' | 'number' | 'boolean' | 'select' | 'color' | 'image'
@@ -56,26 +56,26 @@ interface ParameterSchema {
   type: ParameterType
   label: string
   default: ParameterValue
-  min?: number        // for 'number'
-  max?: number        // for 'number'
-  step?: number       // for 'number'
-  options?: string[]  // for 'select'
+  min?: number        // para 'number'
+  max?: number        // para 'number'
+  step?: number       // para 'number'
+  options?: string[]  // para 'select'
 }
 ```
 
 #### `GenerationResult`
-Result returned by any generation use case.
+Resultado retornado por qualquer caso de uso de geração.
 
 ```typescript
 interface GenerationResult {
   status: 'success' | 'error'
-  geometry?: ArrayBuffer  // STL binary data
+  geometry?: ArrayBuffer  // dados STL binários
   error?: string
 }
 ```
 
 #### `RenderStrategy`
-Discriminated union that tells the application layer which renderer to use.
+União discriminada que informa à camada de aplicação qual renderizador utilizar.
 
 ```typescript
 type RenderStrategy =
@@ -85,26 +85,26 @@ type RenderStrategy =
 
 ---
 
-## Application layer (`src/application/`)
+## Camada de aplicação (`src/application/`)
 
-Contains use cases. Each use case is a single class or function with a clear input/output contract. No React, no UI.
+Contém os casos de uso. Cada caso de uso é uma classe ou função com um contrato claro de entrada/saída. Sem React, sem UI.
 
-### Use cases
+### Casos de uso
 
 #### `generateModel`
-Dispatches to the correct renderer based on the model's `RenderStrategy`.
-- Calls `IOpenScadRenderer` for `openscad` strategy
-- Calls `IThreeGeometryBuilder` for `three-extrude` strategy
+Despacha para o renderizador correto com base na `RenderStrategy` do modelo.
+- Chama `IOpenScadRenderer` para a estratégia `openscad`
+- Chama `IThreeGeometryBuilder` para a estratégia `three-extrude`
 
 #### `traceImage`
-Accepts a raw image file, runs it through the image tracer, returns an SVG path string.
-- Calls `IImageTracer` port
+Recebe um arquivo de imagem bruto, executa pelo traçador de imagem e retorna uma string de caminho SVG.
+- Chama a porta `IImageTracer`
 
 #### `exportStl`
-Accepts a Three.js `BufferGeometry` and returns a binary STL `ArrayBuffer`.
-- Calls `IStlExporter` port
+Recebe uma `BufferGeometry` do Three.js e retorna um `ArrayBuffer` binário STL.
+- Chama a porta `IStlExporter`
 
-### Ports (interfaces defined here, implemented in infrastructure)
+### Portas (interfaces definidas aqui, implementadas na infraestrutura)
 
 ```typescript
 interface IOpenScadRenderer {
@@ -112,7 +112,7 @@ interface IOpenScadRenderer {
 }
 
 interface IImageTracer {
-  trace(imageData: ImageData): Promise<string>  // returns SVG path string
+  trace(imageData: ImageData): Promise<string>  // retorna string de caminho SVG
 }
 
 interface IThreeGeometryBuilder {
@@ -127,54 +127,54 @@ interface IStlExporter {
 
 ---
 
-## Infrastructure layer (`src/infrastructure/`)
+## Camada de infraestrutura (`src/infrastructure/`)
 
-Implements the ports. Has knowledge of external libraries (Three.js, OpenSCAD WASM, Canvas API).
+Implementa as portas. Tem conhecimento de bibliotecas externas (Three.js, OpenSCAD WASM, Canvas API).
 
-### Adapters
+### Adaptadores
 
-| Adapter | Port | Technology |
+| Adaptador | Porta | Tecnologia |
 |---|---|---|
 | `OpenScadWasmRenderer` | `IOpenScadRenderer` | `openscad-wasm-prebuilt` |
-| `CanvasImageTracer` | `IImageTracer` | Canvas API + contour tracing |
+| `CanvasImageTracer` | `IImageTracer` | Canvas API + rastreamento de contorno |
 | `ThreeGeometryBuilder` | `IThreeGeometryBuilder` | Three.js `ExtrudeGeometry`, `TextGeometry` |
 | `ThreeStlExporter` | `IStlExporter` | Three.js `STLExporter` |
 
-### Image tracing strategy
+### Estratégia de rastreamento de imagem
 
-Two options evaluated for V1:
+Duas opções avaliadas para a V1:
 
-1. **Canvas API + manual contour**: threshold the image to black/white, run a marching-squares algorithm to extract the outline polygon. Fast, zero extra dependencies, but lower quality for complex shapes.
+1. **Canvas API + contorno manual**: aplica threshold na imagem para preto/branco e executa um algoritmo de marching-squares para extrair o polígono do contorno. Rápido, sem dependências adicionais, mas com menor qualidade para formas complexas.
 
-2. **Potrace (npm)**: higher quality vectorization but requires running in a Worker since it's CPU-intensive. Better for production quality.
+2. **Potrace (npm)**: vetorização de maior qualidade, mas exige execução em um Worker por ser intensivo em CPU. Melhor para qualidade em produção.
 
-**Decision**: Start with Canvas API + marching-squares for speed. Upgrade to Potrace in a Web Worker when quality becomes a concern (document in V2_ROADMAP if needed).
-
----
-
-## Presentation layer (`src/presentation/`)
-
-React components and hooks. Components are "dumb" — they receive data and dispatch events. All logic lives in hooks, which call application use cases.
-
-### Key hooks
-
-- `useModelGenerator(model, params)` — calls `generateModel` use case, manages loading/error state
-- `useImageTracer(file)` — calls `traceImage` use case, returns SVG path
-- `useModelViewer(geometry)` — initializes Three.js scene, updates geometry
-
-### Component rules
-
-- Components render only what hooks provide
-- No use case imports inside `.tsx` files
-- Three.js canvas is wrapped in `ModelViewer` component with its own imperative ref logic
+**Decisão**: Começar com Canvas API + marching-squares pela velocidade. Migrar para Potrace em um Web Worker quando a qualidade se tornar uma preocupação (documentar em V2_ROADMAP se necessário).
 
 ---
 
-## Data layer (`src/data/models/`)
+## Camada de apresentação (`src/presentation/`)
 
-JSON files, one per model type. Define the model's metadata, parameter schemas, and render strategy. This is the source of truth for what models exist and how they behave.
+Componentes React e hooks. Os componentes são "burros" — recebem dados e disparam eventos. Toda a lógica vive nos hooks, que chamam os casos de uso da aplicação.
 
-Example (`cookie-cutter.json`):
+### Hooks principais
+
+- `useModelGenerator(model, params)` — chama o caso de uso `generateModel`, gerencia estado de carregamento/erro
+- `useImageTracer(file)` — chama o caso de uso `traceImage`, retorna o caminho SVG
+- `useModelViewer(geometry)` — inicializa a cena Three.js, atualiza a geometria
+
+### Regras de componentes
+
+- Componentes renderizam apenas o que os hooks fornecem
+- Nenhuma importação de caso de uso dentro de arquivos `.tsx`
+- O canvas Three.js é encapsulado no componente `ModelViewer` com sua própria lógica imperativa via ref
+
+---
+
+## Camada de dados (`src/data/models/`)
+
+Arquivos JSON, um por tipo de modelo. Definem os metadados do modelo, os esquemas de parâmetros e a estratégia de renderização. Esta é a fonte de verdade para quais modelos existem e como se comportam.
+
+Exemplo (`cookie-cutter.json`):
 
 ```json
 {
@@ -199,23 +199,23 @@ Example (`cookie-cutter.json`):
 
 ## Architecture Decision Records (ADRs)
 
-Stored in `docs/adr/`. Format: `NNNN-title.md`.
+Armazenados em `docs/adr/`. Formato: `NNNN-titulo.md`.
 
-| # | Decision | Status |
+| # | Decisão | Status |
 |---|---|---|
-| [0001](adr/0001-client-side-only.md) | All rendering is client-side (no backend in V1) | Accepted |
-| [0002](adr/0002-openscad-wasm.md) | Use OpenSCAD WASM for parametric text/geometry models | Accepted |
-| [0003](adr/0003-three-extrude-for-images.md) | Use Three.js ExtrudeGeometry for image-based models | Accepted |
-| [0004](adr/0004-canvas-tracer-v1.md) | Use Canvas API contour tracing over Potrace for V1 | Accepted |
+| [0001](adr/0001-client-side-only.md) | Toda renderização é client-side (sem backend na V1) | Aceito |
+| [0002](adr/0002-openscad-wasm.md) | Usar OpenSCAD WASM para modelos paramétricos de texto/geometria | Aceito |
+| [0003](adr/0003-three-extrude-for-images.md) | Usar Three.js ExtrudeGeometry para modelos baseados em imagem | Aceito |
+| [0004](adr/0004-canvas-tracer-v1.md) | Usar rastreamento de contorno via Canvas API em vez de Potrace na V1 | Aceito |
 
 ---
 
-## Technology constraints
+## Restrições tecnológicas
 
-| Constraint | Reason |
+| Restrição | Motivo |
 |---|---|
-| No backend in V1 | Hosted on GitHub Pages (static only) |
-| No authentication in V1 | Personal use, no user management needed |
-| No 3MF export in V1 | STL is sufficient; 3MF is a V2 concern |
-| No i18n in V1 | Single language (PT-BR); i18n is a V2 concern |
-| No payment in V1 | Personal use only; Stripe integration is V2 |
+| Sem backend na V1 | Hospedado no GitHub Pages (apenas estático) |
+| Sem autenticação na V1 | Uso pessoal, sem necessidade de gerenciamento de usuários |
+| Sem exportação 3MF na V1 | STL é suficiente; 3MF é uma preocupação da V2 |
+| Sem i18n na V1 | Idioma único (PT-BR); i18n é uma preocupação da V2 |
+| Sem pagamento na V1 | Apenas uso pessoal; integração com Stripe é V2 |
