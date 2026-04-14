@@ -1,6 +1,6 @@
 import type { Model, ParameterValue, GenerationResult } from '../../../shared/types'
 import type { IImageTracer } from '../../ports/IImageTracer'
-import type { IGeometryBuilder } from '../../ports/IGeometryBuilder'
+import type { GeometryMode, IGeometryBuilder } from '../../ports/IGeometryBuilder'
 
 interface GenerateModelDeps {
   imageTracer: IImageTracer
@@ -33,11 +33,23 @@ export async function generateModel(
 
       if (!traced.pathData) return { status: 'error', error: 'Não foi possível detectar um contorno na imagem.' }
 
-      const targetSize = typeof values.targetSize === 'number' ? values.targetSize : 80
+      const targetSize = typeof values.targetSize === 'number' ? values.targetSize : 70
       const depth = extractDepth(values)
       const wallThickness = typeof values.wallThickness === 'number' ? values.wallThickness : undefined
 
-      const geometry = deps.geometryBuilder.build({ pathData: traced.pathData, targetSize, depth, wallThickness })
+      // Map the "Tipo" select parameter to the geometry mode
+      let mode: GeometryMode = 'solid'
+      if (values.mode === 'Cortador') mode = 'cutter'
+      else if (values.mode === 'Cortador + Carimbo') mode = 'cutter-stamp'
+
+      const geometry = deps.geometryBuilder.build({
+        pathData: traced.pathData,
+        targetSize,
+        depth,
+        wallThickness,
+        mode,
+        stampDepth: 2,
+      })
       return { status: 'success', geometry }
     }
   }
