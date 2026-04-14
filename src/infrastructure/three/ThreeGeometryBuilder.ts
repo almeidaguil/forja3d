@@ -25,7 +25,8 @@ function dot(a: Pt, b: Pt): number { return a[0] * b[0] + a[1] * b[1] }
  * Inward polygon offset for a CW polygon in SVG Y-down coordinates.
  * (Our CanvasImageTracer produces CW paths in pixel Y-down space.)
  *
- * Inward normal for CW / Y-down: rotate edge direction 90° CW → [ey, −ex]
+ * For CW / Y-down, walking the boundary places the interior to the LEFT of travel.
+ * Left of direction [ex, ey] = rotate 90° CCW in Y-down = [-ey, ex].
  * Uses miter joins clamped at 4× d to avoid spikes on sharp corners.
  */
 function offsetPolygon(pts: Pt[], d: number): Pt[] {
@@ -39,9 +40,9 @@ function offsetPolygon(pts: Pt[], d: number): Pt[] {
     const e1 = normalize([curr[0] - prev[0], curr[1] - prev[1]])
     const e2 = normalize([next[0] - curr[0], next[1] - curr[1]])
 
-    // Inward normals (CW / Y-down)
-    const in1: Pt = [e1[1], -e1[0]]
-    const in2: Pt = [e2[1], -e2[0]]
+    // Inward normals for CW / Y-down: [-ey, ex]
+    const in1: Pt = [-e1[1], e1[0]]
+    const in2: Pt = [-e2[1], e2[0]]
 
     const bisector = normalize([in1[0] + in2[0], in1[1] + in2[1]])
     const cosHalf = dot(bisector, in1)
