@@ -256,25 +256,54 @@ npm run deploy
 
 ---
 
-## 8. Fluxo de branches
+## 8. Fluxo de branches (com Pull Requests)
 
-Nunca trabalhe diretamente em `main`. Sempre crie uma branch:
+Nunca trabalhe diretamente em `main` ou `develop`. As duas branches são protegidas — só aceitam merge via Pull Request.
+
+### Fluxo completo
 
 ```bash
-# Começar a partir de develop
+# 1. Partir sempre de develop atualizado
 git checkout develop
 git pull origin develop
 
-# Criar sua branch
+# 2. Criar branch com prefixo correto
 git checkout -b feature/my-feature
+# prefixos aceitos: feature/ fix/ docs/ chore/ refactor/ style/ test/ ci/
 
-# Trabalhar, commitar, enviar
-git add .
-git commit -m "feat(scope): description"
+# 3. Implementar, commitar seguindo Conventional Commits
+git add src/path/to/changed/file.ts
+git commit -m "feat(editor): adicionar formulário de parâmetros"
+
+# 4. Enviar a branch para o GitHub
 git push origin feature/my-feature
 
-# Abrir um Pull Request para develop no GitHub
+# 5. Abrir PR para develop via gh CLI
+gh pr create --base develop \
+  --title "feat(editor): adicionar formulário de parâmetros" \
+  --body "$(cat <<'EOF'
+## O que mudou
+- Componente ParameterForm dinâmico baseado em Model.parameters[]
+- Suporte a tipos: text, number, boolean, select, color, image
+
+## Como testar
+- [ ] Abrir http://localhost:5173/forja3d/
+- [ ] Clicar em um modelo → verificar formulário renderizado
+EOF
+)"
 ```
+
+### Promover develop → main
+
+Após acumular features em `develop`, abrir PR para `main`:
+
+```bash
+gh pr create --base main --head develop \
+  --title "chore(release): promover develop para main" \
+  --body "Deploy das features acumuladas em develop para produção."
+```
+
+> **Regra absoluta:** nunca use `git merge` local em `main` ou `develop`. Sempre PR.
 
 Veja [AGENTS.md](../AGENTS.md) para convenções de mensagem de commit.
 

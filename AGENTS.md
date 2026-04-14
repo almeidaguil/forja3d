@@ -23,8 +23,10 @@ Identifique a tarefa e adote **apenas** o papel correspondente:
 
 ### Git (inegociável)
 - **Nunca** commite diretamente em `main` ou `develop`
+- **Nunca** faça `git merge` local em `main` ou `develop` — branches protegidas só aceitam PR
 - Sempre crie branch: `feature/`, `fix/`, `docs/`, `chore/`
-- Fluxo: `branch → develop → main` (via `merge --no-ff`)
+- Fluxo: `branch` → **PR para `develop`** → **PR para `main`** (tudo via GitHub)
+- Abra PRs com `gh pr create` — nunca merge manual local em branches protegidas
 - Conta local configurada: `almeidaguil` / `almeida.guilherme37@gmail.com`
   - Nunca use a conta global (é de trabalho — MercadoLibre)
   - Verifique com `git config --local user.email` antes do primeiro commit

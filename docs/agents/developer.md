@@ -86,6 +86,25 @@ npm run lint         # ESLint
 git status           # ver o que mudou
 ```
 
+## Fluxo de entrega (obrigatório)
+
+```bash
+# 1. Commitar na branch de feature
+git add src/path/alterado.ts
+git commit -m "feat(scope): descrição em português"
+
+# 2. Enviar branch
+git push origin feature/minha-feature
+
+# 3. Abrir PR para develop — NUNCA git merge local
+gh pr create --base develop --title "feat(scope): descrição" --body "..."
+
+# 4. Após PR mergeado em develop, abrir PR para main (quando pronto para deploy)
+gh pr create --base main --head develop --title "chore(release): ..." --body "..."
+```
+
+> Branches `main` e `develop` são protegidas. `git merge` local nelas será rejeitado pelo GitHub.
+
 ---
 
 ## Variáveis de ambiente e segurança

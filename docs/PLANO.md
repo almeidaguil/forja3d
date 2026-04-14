@@ -268,11 +268,20 @@ Se você está retomando o trabalho e o chat foi perdido, siga estes passos:
 5. **Rode o projeto localmente:**
    ```bash
    cd /Users/guisalmeida/Documents/Pessoal/forja3d
+   nvm use
    npm install
    npm run dev
    # Acesse http://localhost:5173/forja3d/
    ```
-6. **Próximo foco:** implementar o `ModelEditor` (ver P1 acima)
+6. **Para entregar qualquer mudança — sempre via PR:**
+   ```bash
+   git checkout develop && git pull origin develop
+   git checkout -b feature/minha-feature
+   # ... implementar e commitar ...
+   git push origin feature/minha-feature
+   gh pr create --base develop --title "feat(scope): ..." --body "..."
+   ```
+7. **Próximo foco:** implementar o `ModelEditor` (ver P1 acima)
 
 ---
 
