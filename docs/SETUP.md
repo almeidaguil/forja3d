@@ -249,6 +249,61 @@ git config --global core.autocrlf input
 
 ---
 
+## 9. Configurar MCPs para Claude Code (opcional, recomendado)
+
+O projeto inclui um arquivo `.mcp.json` na raiz com quatro servidores MCP pré-configurados para uso com Claude Code. Eles melhoram significativamente a qualidade das respostas de IA ao trabalhar neste projeto.
+
+### O que cada MCP faz
+
+| MCP | Benefício |
+|---|---|
+| **context7** | Busca documentação atualizada de Three.js, React, TypeScript em tempo real — elimina alucinações de API |
+| **github** | Acessa issues, PRs e releases do repositório diretamente no chat |
+| **sequential-thinking** | Raciocínio estruturado passo a passo para decisões complexas de arquitetura |
+| **fetch** | Busca documentação externa, specs de formato (STL, SVG, 3MF) |
+
+### Ativar os MCPs no Claude Code
+
+Os MCPs `context7`, `sequential-thinking` e `fetch` não precisam de credenciais e funcionam imediatamente após ativação.
+
+**1. Ative o projeto no Claude Code:**
+```bash
+cd /caminho/para/forja3d
+claude  # O Claude Code lê .mcp.json automaticamente ao abrir o projeto
+```
+
+**2. Configure o MCP do GitHub** (necessita de token):
+
+Gere um Personal Access Token no GitHub:
+- Acesse: GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens
+- Permissões necessárias: `Contents: Read`, `Issues: Read/Write`, `Pull requests: Read/Write`
+
+Substitua o placeholder no `.mcp.json`:
+```json
+"GITHUB_PERSONAL_ACCESS_TOKEN": "ghp_seu_token_aqui"
+```
+
+> **Atenção:** não faça commit com um token real. Adicione ao `.gitignore` se necessário, ou use variável de ambiente do sistema.
+
+**Alternativa segura — variável de ambiente:**
+
+No macOS/Linux, exporte o token no seu shell antes de abrir o Claude Code:
+```bash
+export GITHUB_TOKEN=ghp_seu_token_aqui
+claude
+```
+
+E no `.mcp.json`, altere para referenciar a variável (sintaxe aceita pelo Claude Code):
+```json
+"GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
+```
+
+### Verificar se os MCPs estão ativos
+
+No Claude Code, use o comando `/mcp` para listar os servidores conectados.
+
+---
+
 ## Configuração do editor (recomendado)
 
 **VS Code** com as seguintes extensões:
