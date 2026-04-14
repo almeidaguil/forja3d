@@ -1,14 +1,72 @@
-<svg viewBox="0 0 200 44" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Forja3D">
-  <!-- Icon: isometric cube -->
-  <polygon points="22,2 40,12 22,22 4,12" fill="#fb923c"/>
-  <polygon points="4,12 22,22 22,42 4,32" fill="#c2410c"/>
-  <polygon points="22,22 40,12 40,32 22,42" fill="#ea580c"/>
-  <polyline points="22,2 40,12 40,32 22,42 4,32 4,12 22,2" fill="none" stroke="#0f0f0f" stroke-width="0.5" stroke-opacity="0.3"/>
-  <line x1="22" y1="22" x2="22" y2="42" stroke="#0f0f0f" stroke-width="0.5" stroke-opacity="0.3"/>
-  <line x1="22" y1="22" x2="40" y2="12" stroke="#0f0f0f" stroke-width="0.5" stroke-opacity="0.3"/>
-  <line x1="22" y1="22" x2="4" y2="12" stroke="#0f0f0f" stroke-width="0.5" stroke-opacity="0.3"/>
+<svg viewBox="0 0 200 56" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Forja3D">
+  <defs>
+    <!-- Glow background -->
+    <radialGradient id="logo-bg-glow" cx="50%" cy="68%" r="52%">
+      <stop offset="0%" stop-color="#fb923c" stop-opacity="0.32"/>
+      <stop offset="100%" stop-color="#fb923c" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Top face: amber to vivid orange -->
+    <linearGradient id="logo-face-top" gradientUnits="userSpaceOnUse" x1="6" y1="8" x2="46" y2="28">
+      <stop offset="0%" stop-color="#fde68a"/>
+      <stop offset="100%" stop-color="#f97316"/>
+    </linearGradient>
+    <!-- Left face: deep shadow -->
+    <linearGradient id="logo-face-left" gradientUnits="userSpaceOnUse" x1="6" y1="18" x2="26" y2="48">
+      <stop offset="0%" stop-color="#c2410c"/>
+      <stop offset="100%" stop-color="#7c2d12"/>
+    </linearGradient>
+    <!-- Right face: mid shadow -->
+    <linearGradient id="logo-face-right" gradientUnits="userSpaceOnUse" x1="26" y1="18" x2="46" y2="48">
+      <stop offset="0%" stop-color="#ea580c"/>
+      <stop offset="100%" stop-color="#9a3412"/>
+    </linearGradient>
+    <!-- Subtle cube glow -->
+    <filter id="logo-cube-glow" x="-18%" y="-18%" width="136%" height="136%">
+      <feGaussianBlur stdDeviation="1.2" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
 
-  <!-- Wordmark -->
-  <text x="52" y="30" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="700" letter-spacing="-0.5" fill="#f0f0f0">Forja</text>
-  <text x="107" y="30" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="700" letter-spacing="-0.5" fill="#fb923c">3D</text>
+  <!-- Ambient heat glow -->
+  <ellipse cx="26" cy="36" rx="22" ry="15" fill="url(#logo-bg-glow)"/>
+
+  <!-- Cube -->
+  <g filter="url(#logo-cube-glow)">
+    <polygon points="26,8 46,18 26,28 6,18" fill="url(#logo-face-top)"/>
+    <polygon points="6,18 26,28 26,48 6,38" fill="url(#logo-face-left)"/>
+    <polygon points="26,28 46,18 46,38 26,48" fill="url(#logo-face-right)"/>
+  </g>
+
+  <!-- Top-edge highlight -->
+  <polyline points="26,8 46,18 26,28 6,18 26,8" fill="none" stroke="#fef9c3" stroke-width="0.55" stroke-opacity="0.55"/>
+
+  <!-- ── Sparks ── -->
+  <!-- Large star, upper-right -->
+  <path d="M46,4.5 L46.53,6.47 L48.5,7 L46.53,7.53 L46,9.5 L45.47,7.53 L43.5,7 L45.47,6.47 Z"
+        fill="#fcd34d"/>
+  <!-- Medium star, upper-center -->
+  <path d="M37,1.2 L37.38,2.62 L38.8,3 L37.38,3.38 L37,4.8 L36.62,3.38 L35.2,3 L36.62,2.62 Z"
+        fill="#fbbf24" opacity="0.9"/>
+  <!-- Small star, upper-left -->
+  <path d="M12,6.8 L12.25,7.75 L13.2,8 L12.25,8.25 L12,9.2 L11.75,8.25 L10.8,8 L11.75,7.75 Z"
+        fill="#fb923c" opacity="0.85"/>
+  <!-- Dots -->
+  <circle cx="26" cy="3"  r="0.9"  fill="#fde68a" opacity="0.9"/>
+  <circle cx="50" cy="20" r="1.0"  fill="#fbbf24" opacity="0.78"/>
+  <circle cx="51" cy="15" r="0.65" fill="#fcd34d" opacity="0.7"/>
+  <!-- Streaks -->
+  <line x1="44" y1="5.5" x2="41.5" y2="3.8" stroke="#fcd34d" stroke-width="0.75" stroke-linecap="round" opacity="0.7"/>
+
+  <!-- ── Wordmark ── -->
+  <text x="60" y="37"
+        font-family="system-ui, -apple-system, sans-serif"
+        font-size="24" font-weight="700" letter-spacing="-0.5"
+        fill="#f0f0f0">Forja</text>
+  <text x="122" y="37"
+        font-family="system-ui, -apple-system, sans-serif"
+        font-size="24" font-weight="700" letter-spacing="-0.5"
+        fill="#fb923c">3D</text>
 </svg>
