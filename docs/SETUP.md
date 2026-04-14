@@ -4,6 +4,21 @@ Guia completo para instalar, executar e compilar o Forja3D no macOS, Linux e Win
 
 ---
 
+## Checklist de primeiro setup
+
+Se você está configurando o ambiente pela primeira vez, siga esta ordem:
+
+- [ ] Instalar nvm + Node 22 (seção 1)
+- [ ] Clonar o repositório (seção 2)
+- [ ] `nvm use` dentro do diretório (usa `.nvmrc` automaticamente)
+- [ ] `git config --local` para identidade pessoal (seção 3)
+- [ ] `npm install` (seção 4)
+- [ ] Adicionar `GITHUB_TOKEN` ao `~/.zshrc` (seção 9)
+- [ ] Abrir no VS Code → aceitar extensões recomendadas (seção 10)
+- [ ] `npm run dev` e verificar http://localhost:5173/forja3d/
+
+---
+
 ## Pré-requisitos
 
 Você precisa das seguintes ferramentas instaladas antes de clonar o projeto:
@@ -11,8 +26,11 @@ Você precisa das seguintes ferramentas instaladas antes de clonar o projeto:
 | Ferramenta | Versão | Finalidade |
 |---|---|---|
 | **Git** | 2.x+ | Controle de versão |
-| **Node.js** | 20.x LTS ou superior | Runtime JavaScript |
+| **nvm** | qualquer | Gerenciador de versões do Node.js |
+| **Node.js** | 22.x (via nvm) | Runtime JavaScript |
 | **npm** | 10.x+ (incluso no Node.js) | Gerenciador de pacotes |
+
+> O projeto inclui `.nvmrc` com `22`. Após instalar o nvm, um simples `nvm use` dentro do diretório usa a versão correta automaticamente — sem precisar lembrar qual versão usar.
 
 ---
 
@@ -20,7 +38,46 @@ Você precisa das seguintes ferramentas instaladas antes de clonar o projeto:
 
 ### macOS
 
-**Opção A — Homebrew (recomendado)**
+**Opção A — nvm (recomendado)**
+
+nvm gerencia múltiplas versões do Node sem poluir o sistema:
+
+```bash
+# Instalar nvm
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+
+# Recarregar o shell
+source ~/.zshrc
+
+# Instalar e usar Node 22
+nvm install 22
+nvm use 22
+```
+
+Para ativar o nvm automaticamente ao entrar em diretórios com `.nvmrc`, adicione ao final do `~/.zshrc`:
+
+```bash
+# Auto-switch Node version via .nvmrc
+autoload -U add-zsh-hook
+load-nvmrc() {
+  local node_version="$(nvm version)"
+  local nvmrc_path="$(nvm_find_nvmrc)"
+  if [ -n "$nvmrc_path" ]; then
+    local nvmrc_node_version=$(nvm version "$(cat "${nvmrc_path}")")
+    if [ "$nvmrc_node_version" = "N/A" ]; then
+      nvm install
+    elif [ "$nvmrc_node_version" != "$node_version" ]; then
+      nvm use
+    fi
+  fi
+}
+add-zsh-hook chpwd load-nvmrc
+load-nvmrc
+```
+
+Depois `source ~/.zshrc` — a partir daí, `cd forja3d` já troca para Node 22 automaticamente.
+
+**Opção B — Homebrew**
 
 Se você não tiver o Homebrew instalado:
 ```bash
@@ -30,17 +87,17 @@ Se você não tiver o Homebrew instalado:
 Então instale Git e Node.js:
 ```bash
 brew install git
-brew install node
+brew install node@22
 ```
 
-**Opção B — Instaladores oficiais**
-- Git: baixe em https://git-scm.com/download/mac
-- Node.js: baixe o instalador LTS em https://nodejs.org/
+**Opção C — Instaladores oficiais**
+- Git: https://git-scm.com/download/mac
+- Node.js LTS: https://nodejs.org/
 
 Verificar:
 ```bash
 git --version    # git version 2.x.x
-node --version   # v20.x.x or higher
+node --version   # v22.x.x
 npm --version    # 10.x.x or higher
 ```
 
@@ -49,15 +106,16 @@ npm --version    # 10.x.x or higher
 ### Linux (Ubuntu / Debian)
 
 ```bash
-# Atualizar lista de pacotes
-sudo apt update
+# Instalar nvm
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+source ~/.bashrc
+
+# Instalar Node 22
+nvm install 22
+nvm use 22
 
 # Instalar Git
-sudo apt install -y git
-
-# Instalar Node.js 20.x via NodeSource
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-sudo apt install -y nodejs
+sudo apt update && sudo apt install -y git
 
 # Verificar
 git --version
@@ -68,19 +126,19 @@ npm --version
 **Outras distribuições (Fedora / RHEL):**
 ```bash
 sudo dnf install -y git
-sudo dnf module install -y nodejs:20
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
 ```
 
 **Outras distribuições (Arch):**
 ```bash
-sudo pacman -S git nodejs npm
+sudo pacman -S git nvm
 ```
 
 ---
 
 ### Windows
 
-**Opção A — winget (Gerenciador de Pacotes do Windows, Windows 10+)**
+**Opção A — winget (Windows 10+)**
 
 Abra o **PowerShell** como Administrador:
 ```powershell
@@ -90,17 +148,17 @@ winget install OpenJS.NodeJS.LTS
 
 Após instalar, feche e reabra o terminal.
 
-**Opção B — Instaladores oficiais**
-- Git: baixe em https://git-scm.com/download/win — durante a instalação, selecione "Git Bash" e "Git from the command line"
-- Node.js: baixe o instalador LTS em https://nodejs.org/ — marque "Add to PATH" durante a instalação
-
-**Opção C — NVM para Windows** (recomendado se você gerencia múltiplas versões do Node)
+**Opção B — NVM para Windows** (recomendado)
 
 Baixe e instale em https://github.com/coreybutler/nvm-windows/releases, então:
 ```powershell
-nvm install 20
-nvm use 20
+nvm install 22
+nvm use 22
 ```
+
+**Opção C — Instaladores oficiais**
+- Git: https://git-scm.com/download/win — selecione "Git Bash" e "Git from the command line"
+- Node.js: https://nodejs.org/ — marque "Add to PATH"
 
 Verificar (no Git Bash ou PowerShell):
 ```bash
@@ -118,6 +176,8 @@ git clone https://github.com/almeidaguil/forja3d.git
 cd forja3d
 ```
 
+Se você usa nvm com auto-switch, a versão Node correta é aplicada automaticamente ao entrar no diretório.
+
 ---
 
 ## 3. Configurar identidade git (apenas conta pessoal)
@@ -125,8 +185,8 @@ cd forja3d
 Este projeto usa uma identidade git **local** para evitar mistura com contas de trabalho ou globais. Execute estes comandos dentro do diretório do projeto:
 
 ```bash
-git config --local user.name "Your Name"
-git config --local user.email "your@email.com"
+git config --local user.name "Guilherme Almeida"
+git config --local user.email "almeida.guilherme37@gmail.com"
 ```
 
 Verifique se foi aplicado:
@@ -142,6 +202,10 @@ git config --local user.email
 ## 4. Instalar dependências
 
 ```bash
+# Garantir a versão correta do Node (necessário se não usa auto-switch)
+nvm use
+
+# Instalar dependências
 npm install
 ```
 
@@ -216,6 +280,139 @@ Veja [AGENTS.md](../AGENTS.md) para convenções de mensagem de commit.
 
 ---
 
+## 9. Configurar ambiente de IA (Claude Code + MCPs)
+
+O projeto inclui `.mcp.json` na raiz com quatro servidores MCP pré-configurados para Claude Code.
+**Claude Code lê este arquivo automaticamente** ao abrir o projeto — sem instalação manual dos pacotes.
+
+### Como funciona
+
+```
+Claude Code abre o diretório do projeto
+  → lê .mcp.json automaticamente
+  → inicia cada servidor com npx -y (baixa o pacote na primeira execução)
+  → MCPs ficam disponíveis durante toda a sessão
+```
+
+### MCPs configurados
+
+| MCP | Ativação | Benefício |
+|---|---|---|
+| **context7** | Automática | Docs atualizadas de Three.js, React 19, TypeScript — previne alucinações de API |
+| **sequential-thinking** | Automática | Raciocínio estruturado passo a passo para decisões arquiteturais |
+| **fetch** | Automática | Busca specs externas (STL, SVG, 3MF) e documentação de APIs |
+| **github** | Requer token | Acessa issues, PRs e releases do repositório diretamente no chat |
+
+Os três primeiros funcionam imediatamente — nenhuma configuração adicional.
+
+### Setup do token do GitHub (uma vez só)
+
+**Passo 1 — Gerar o Personal Access Token:**
+
+- Acesse: GitHub → Settings → Developer settings → Personal access tokens → **Fine-grained tokens**
+- Repository access: `almeidaguil/forja3d`
+- Permissões mínimas:
+  - `Contents`: Read
+  - `Issues`: Read and Write
+  - `Pull requests`: Read and Write
+
+**Passo 2 — Adicionar ao shell de forma permanente:**
+
+```bash
+# Abrir o arquivo de perfil do shell
+nano ~/.zshrc
+```
+
+Adicione ao final do arquivo:
+```bash
+export GITHUB_TOKEN="ghp_seu_token_aqui"
+```
+
+Recarregar:
+```bash
+source ~/.zshrc
+```
+
+**Passo 3 — Verificar:**
+```bash
+echo $GITHUB_TOKEN   # deve exibir o token
+```
+
+O `.mcp.json` já está configurado para ler `${GITHUB_TOKEN}` — nenhuma outra configuração necessária.
+
+> **Segurança:** o token fica apenas no seu shell local (`~/.zshrc`). O repositório referencia via `${GITHUB_TOKEN}` e nunca expõe o valor real. Nunca faça commit de um token em texto plano.
+
+### Abrir o projeto com Claude Code
+
+```bash
+cd /Users/guisalmeida/Documents/Pessoal/forja3d
+claude
+```
+
+### Verificar MCPs ativos
+
+Dentro do Claude Code, execute:
+```
+/mcp
+```
+
+Você deve ver `context7`, `sequential-thinking`, `fetch` e `github` listados como conectados.
+
+### Troubleshooting de MCPs
+
+**GitHub MCP mostra erro de autenticação:**
+```bash
+echo $GITHUB_TOKEN   # se vazio, o token não foi carregado
+source ~/.zshrc      # recarregar o perfil
+```
+
+**MCP não aparece na lista `/mcp`:**
+```bash
+# Certifique-se de abrir o Claude Code a partir do diretório do projeto
+cd /Users/guisalmeida/Documents/Pessoal/forja3d
+claude
+
+# Verificar se .mcp.json existe na raiz
+ls .mcp.json
+```
+
+**npx lento na primeira execução:** é normal — o pacote do MCP está sendo baixado. As execuções subsequentes são instantâneas (cache local do npx).
+
+---
+
+## 10. Configuração do editor (VS Code)
+
+### Extensões recomendadas
+
+O arquivo `.vscode/extensions.json` já lista as extensões recomendadas. Ao abrir o projeto no VS Code, uma notificação aparece automaticamente perguntando se deseja instalá-las.
+
+Para instalar manualmente:
+```bash
+code --install-extension dbaeumer.vscode-eslint
+code --install-extension esbenp.prettier-vscode
+code --install-extension bradlc.vscode-tailwindcss
+code --install-extension ms-vscode.vscode-typescript-next
+code --install-extension EditorConfig.EditorConfig
+```
+
+| Extensão | Finalidade |
+|---|---|
+| ESLint | Feedback de lint inline + fix automático ao salvar |
+| Prettier | Formatação automática |
+| Tailwind CSS IntelliSense | Autocompletar nomes de classes |
+| TypeScript Nightly | Verificação de tipos mais recente |
+| EditorConfig | Aplica `.editorconfig` (indentação, encoding, newline) |
+
+### Configurações automáticas
+
+O arquivo `.vscode/settings.json` já configura:
+- **ESLint fix ao salvar** (`source.fixAll.eslint`) — corrige lint automaticamente
+- **TypeScript** — usa o compilador do projeto (`node_modules/typescript/lib`)
+- **Tailwind** — autocompletar em `clsx()` e `cn()` além de classes inline
+- **Exclusão do `dist/`** da árvore de arquivos e busca
+
+---
+
 ## Solução de problemas
 
 ### `node: command not found` após instalação (Windows)
@@ -230,94 +427,13 @@ O Vite tentará automaticamente a próxima porta disponível. Verifique a saída
 
 Se os assets do OpenSCAD WASM falharem ao carregar, certifique-se de que seu navegador permite WebAssembly. A maioria dos navegadores modernos suporta por padrão.
 
-### npm install falha com erros de permissão (Linux/macOS)
+### `npm install` falha com erros de permissão (Linux/macOS)
 
-**Não** use `sudo npm install`. Em vez disso, corrija as permissões do npm:
-```bash
-mkdir ~/.npm-global
-npm config set prefix '~/.npm-global'
-echo 'export PATH=~/.npm-global/bin:$PATH' >> ~/.bashrc
-source ~/.bashrc
-```
+**Não** use `sudo npm install`. Use nvm — ele instala Node no diretório home do usuário, eliminando problemas de permissão.
 
 ### Problema de terminações de linha no Windows (CRLF vs LF)
 
-O projeto usa terminações de linha LF. No Windows, configure o git antes de clonar:
+O projeto usa terminações de linha LF (definido no `.editorconfig`). No Windows, configure o git antes de clonar:
 ```bash
 git config --global core.autocrlf input
-```
-
----
-
-## 9. Configurar MCPs para Claude Code (opcional, recomendado)
-
-O projeto inclui um arquivo `.mcp.json` na raiz com quatro servidores MCP pré-configurados para uso com Claude Code. Eles melhoram significativamente a qualidade das respostas de IA ao trabalhar neste projeto.
-
-### O que cada MCP faz
-
-| MCP | Benefício |
-|---|---|
-| **context7** | Busca documentação atualizada de Three.js, React, TypeScript em tempo real — elimina alucinações de API |
-| **github** | Acessa issues, PRs e releases do repositório diretamente no chat |
-| **sequential-thinking** | Raciocínio estruturado passo a passo para decisões complexas de arquitetura |
-| **fetch** | Busca documentação externa, specs de formato (STL, SVG, 3MF) |
-
-### Ativar os MCPs no Claude Code
-
-Os MCPs `context7`, `sequential-thinking` e `fetch` não precisam de credenciais e funcionam imediatamente após ativação.
-
-**1. Ative o projeto no Claude Code:**
-```bash
-cd /caminho/para/forja3d
-claude  # O Claude Code lê .mcp.json automaticamente ao abrir o projeto
-```
-
-**2. Configure o MCP do GitHub** (necessita de token):
-
-Gere um Personal Access Token no GitHub:
-- Acesse: GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens
-- Permissões necessárias: `Contents: Read`, `Issues: Read/Write`, `Pull requests: Read/Write`
-
-Substitua o placeholder no `.mcp.json`:
-```json
-"GITHUB_PERSONAL_ACCESS_TOKEN": "ghp_seu_token_aqui"
-```
-
-> **Atenção:** não faça commit com um token real. Adicione ao `.gitignore` se necessário, ou use variável de ambiente do sistema.
-
-**Alternativa segura — variável de ambiente:**
-
-No macOS/Linux, exporte o token no seu shell antes de abrir o Claude Code:
-```bash
-export GITHUB_TOKEN=ghp_seu_token_aqui
-claude
-```
-
-E no `.mcp.json`, altere para referenciar a variável (sintaxe aceita pelo Claude Code):
-```json
-"GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
-```
-
-### Verificar se os MCPs estão ativos
-
-No Claude Code, use o comando `/mcp` para listar os servidores conectados.
-
----
-
-## Configuração do editor (recomendado)
-
-**VS Code** com as seguintes extensões:
-
-| Extensão | Finalidade |
-|---|---|
-| ESLint | Feedback de lint inline |
-| Prettier | Formatação automática |
-| Tailwind CSS IntelliSense | Autocompletar nomes de classes |
-| TypeScript (built-in) | Verificação de tipos |
-
-Instalar todas de uma vez:
-```bash
-code --install-extension dbaeumer.vscode-eslint
-code --install-extension esbenp.prettier-vscode
-code --install-extension bradlc.vscode-tailwindcss
 ```

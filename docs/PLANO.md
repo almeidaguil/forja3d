@@ -91,6 +91,13 @@ interface Model {
 - **Logo ícone:** `/forja3d/logo-icon.svg` — cubo standalone com faíscas e brilho
 - **Conceito:** cubo forjado — gradientes âmbar→laranja nas faces, faíscas 4-pontas, brilho de calor
 
+### Ambiente de Desenvolvimento Automatizado
+- **`.nvmrc`** — pina Node 22 (mesma versão do CI); `nvm use` dentro do diretório usa automaticamente
+- **`.editorconfig`** — garante `indent=2`, `LF`, `utf-8` em qualquer editor
+- **`.vscode/settings.json`** — ESLint fix ao salvar, TypeScript do projeto, suporte a Tailwind em `clsx()`/`cn()`
+- **`.vscode/extensions.json`** — VS Code sugere as 5 extensões recomendadas automaticamente ao abrir o projeto
+- **`.mcp.json`** — 4 MCPs pré-configurados; `context7`/`sequential-thinking`/`fetch` ativam sem config; GitHub lê `${GITHUB_TOKEN}` do ambiente (nunca expõe token)
+
 ### Documentação (tudo em português)
 | Arquivo | Conteúdo |
 |---------|----------|
@@ -276,3 +283,4 @@ Se você está retomando o trabalho e o chat foi perdido, siga estes passos:
 | 2026-04-13 | Setup inicial: projeto, arquitetura, CI/CD, tipos, dados, Home, brand v1 |
 | 2026-04-14 | Logo v2 (conceito forja: gradientes, faíscas, brilho), docs em PT, Husky+commitlint |
 | 2026-04-14 | Criação deste arquivo de plano |
+| 2026-04-14 | Ambiente automatizado: `.nvmrc`, `.editorconfig`, `.vscode/`, `.mcp.json` com `${GITHUB_TOKEN}`, SETUP.md reescrito |
