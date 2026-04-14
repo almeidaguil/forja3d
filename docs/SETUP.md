@@ -1,43 +1,43 @@
-# Setup Guide — Forja3D
+# Guia de Configuração — Forja3D
 
-Complete guide to install, run, and build Forja3D on macOS, Linux, and Windows.
+Guia completo para instalar, executar e compilar o Forja3D no macOS, Linux e Windows.
 
 ---
 
-## Prerequisites
+## Pré-requisitos
 
-You need the following tools installed before cloning the project:
+Você precisa das seguintes ferramentas instaladas antes de clonar o projeto:
 
-| Tool | Version | Purpose |
+| Ferramenta | Versão | Finalidade |
 |---|---|---|
-| **Git** | 2.x+ | Version control |
-| **Node.js** | 20.x LTS or higher | JavaScript runtime |
-| **npm** | 10.x+ (comes with Node.js) | Package manager |
+| **Git** | 2.x+ | Controle de versão |
+| **Node.js** | 20.x LTS ou superior | Runtime JavaScript |
+| **npm** | 10.x+ (incluso no Node.js) | Gerenciador de pacotes |
 
 ---
 
-## 1. Install prerequisites
+## 1. Instalar os pré-requisitos
 
 ### macOS
 
-**Option A — Homebrew (recommended)**
+**Opção A — Homebrew (recomendado)**
 
-If you don't have Homebrew installed:
+Se você não tiver o Homebrew instalado:
 ```bash
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
-Then install Git and Node.js:
+Então instale Git e Node.js:
 ```bash
 brew install git
 brew install node
 ```
 
-**Option B — Official installers**
-- Git: download from https://git-scm.com/download/mac
-- Node.js: download the LTS installer from https://nodejs.org/
+**Opção B — Instaladores oficiais**
+- Git: baixe em https://git-scm.com/download/mac
+- Node.js: baixe o instalador LTS em https://nodejs.org/
 
-Verify:
+Verificar:
 ```bash
 git --version    # git version 2.x.x
 node --version   # v20.x.x or higher
@@ -49,29 +49,29 @@ npm --version    # 10.x.x or higher
 ### Linux (Ubuntu / Debian)
 
 ```bash
-# Update package list
+# Atualizar lista de pacotes
 sudo apt update
 
-# Install Git
+# Instalar Git
 sudo apt install -y git
 
-# Install Node.js 20.x via NodeSource
+# Instalar Node.js 20.x via NodeSource
 curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt install -y nodejs
 
-# Verify
+# Verificar
 git --version
 node --version
 npm --version
 ```
 
-**Other distros (Fedora / RHEL):**
+**Outras distribuições (Fedora / RHEL):**
 ```bash
 sudo dnf install -y git
 sudo dnf module install -y nodejs:20
 ```
 
-**Other distros (Arch):**
+**Outras distribuições (Arch):**
 ```bash
 sudo pacman -S git nodejs npm
 ```
@@ -80,29 +80,29 @@ sudo pacman -S git nodejs npm
 
 ### Windows
 
-**Option A — winget (Windows Package Manager, Windows 10+)**
+**Opção A — winget (Gerenciador de Pacotes do Windows, Windows 10+)**
 
-Open **PowerShell** as Administrator:
+Abra o **PowerShell** como Administrador:
 ```powershell
 winget install Git.Git
 winget install OpenJS.NodeJS.LTS
 ```
 
-After installing, close and reopen your terminal.
+Após instalar, feche e reabra o terminal.
 
-**Option B — Official installers**
-- Git: download from https://git-scm.com/download/win — during install, select "Git Bash" and "Git from the command line"
-- Node.js: download the LTS installer from https://nodejs.org/ — check "Add to PATH" during install
+**Opção B — Instaladores oficiais**
+- Git: baixe em https://git-scm.com/download/win — durante a instalação, selecione "Git Bash" e "Git from the command line"
+- Node.js: baixe o instalador LTS em https://nodejs.org/ — marque "Add to PATH" durante a instalação
 
-**Option C — NVM for Windows** (recommended if you manage multiple Node versions)
+**Opção C — NVM para Windows** (recomendado se você gerencia múltiplas versões do Node)
 
-Download and install from https://github.com/coreybutler/nvm-windows/releases, then:
+Baixe e instale em https://github.com/coreybutler/nvm-windows/releases, então:
 ```powershell
 nvm install 20
 nvm use 20
 ```
 
-Verify (in Git Bash or PowerShell):
+Verificar (no Git Bash ou PowerShell):
 ```bash
 git --version
 node --version
@@ -111,7 +111,7 @@ npm --version
 
 ---
 
-## 2. Clone the repository
+## 2. Clonar o repositório
 
 ```bash
 git clone https://github.com/almeidaguil/forja3d.git
@@ -120,119 +120,119 @@ cd forja3d
 
 ---
 
-## 3. Configure git identity (personal account only)
+## 3. Configurar identidade git (apenas conta pessoal)
 
-This project uses a **local** git identity to avoid mixing with work or global accounts. Run these commands inside the project directory:
+Este projeto usa uma identidade git **local** para evitar mistura com contas de trabalho ou globais. Execute estes comandos dentro do diretório do projeto:
 
 ```bash
 git config --local user.name "Your Name"
 git config --local user.email "your@email.com"
 ```
 
-Verify it was applied:
+Verifique se foi aplicado:
 ```bash
 git config --local user.name
 git config --local user.email
 ```
 
-> These settings only affect this repository and do not change your global git config.
+> Essas configurações afetam apenas este repositório e não alteram seu git config global.
 
 ---
 
-## 4. Install dependencies
+## 4. Instalar dependências
 
 ```bash
 npm install
 ```
 
-This installs all packages listed in `package.json`, including Three.js, OpenSCAD WASM, Tailwind CSS, and dev tooling.
+Isso instala todos os pacotes listados em `package.json`, incluindo Three.js, OpenSCAD WASM, Tailwind CSS e ferramentas de desenvolvimento.
 
 ---
 
-## 5. Run the development server
+## 5. Executar o servidor de desenvolvimento
 
 ```bash
 npm run dev
 ```
 
-The app will be available at: **http://localhost:5173/forja3d/**
+A aplicação estará disponível em: **http://localhost:5173/forja3d/**
 
-The dev server supports **Hot Module Replacement (HMR)** — changes to source files reflect in the browser instantly without a full reload.
+O servidor de desenvolvimento suporta **Hot Module Replacement (HMR)** — alterações nos arquivos fonte refletem no navegador instantaneamente, sem recarregamento completo.
 
 ---
 
-## 6. Build for production
+## 6. Compilar para produção
 
 ```bash
 npm run build
 ```
 
-The output is placed in the `dist/` directory. This is what gets deployed to GitHub Pages.
+O resultado é colocado no diretório `dist/`. É isso que é implantado no GitHub Pages.
 
-To preview the production build locally before deploying:
+Para visualizar a build de produção localmente antes de implantar:
 ```bash
 npm run preview
 ```
 
-The preview will be at: **http://localhost:4173/forja3d/**
+O preview estará em: **http://localhost:4173/forja3d/**
 
 ---
 
-## 7. Deploy to GitHub Pages
+## 7. Implantar no GitHub Pages
 
-Deployment happens automatically via GitHub Actions on every push to `main`. See [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml).
+A implantação acontece automaticamente via GitHub Actions a cada push para `main`. Veja [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml).
 
-To deploy manually:
+Para implantar manualmente:
 ```bash
 npm run build
 npm run deploy
 ```
 
-> You must have push access to the `almeidaguil/forja3d` repository.
+> Você precisa ter acesso de push ao repositório `almeidaguil/forja3d`.
 
 ---
 
-## 8. Branch workflow
+## 8. Fluxo de branches
 
-Never work directly on `main`. Always create a branch:
+Nunca trabalhe diretamente em `main`. Sempre crie uma branch:
 
 ```bash
-# Start from develop
+# Começar a partir de develop
 git checkout develop
 git pull origin develop
 
-# Create your branch
+# Criar sua branch
 git checkout -b feature/my-feature
 
-# Work, commit, push
+# Trabalhar, commitar, enviar
 git add .
 git commit -m "feat(scope): description"
 git push origin feature/my-feature
 
-# Open a Pull Request to develop on GitHub
+# Abrir um Pull Request para develop no GitHub
 ```
 
-See [AGENTS.md](../AGENTS.md) for commit message conventions.
+Veja [AGENTS.md](../AGENTS.md) para convenções de mensagem de commit.
 
 ---
 
-## Troubleshooting
+## Solução de problemas
 
-### `node: command not found` after install (Windows)
+### `node: command not found` após instalação (Windows)
 
-Close and reopen the terminal after installing Node.js. If using Git Bash, restart it.
+Feche e reabra o terminal após instalar o Node.js. Se estiver usando Git Bash, reinicie-o.
 
-### Port 5173 already in use
+### Porta 5173 já em uso
 
-Vite will automatically try the next available port. Check the terminal output for the actual URL.
+O Vite tentará automaticamente a próxima porta disponível. Verifique a saída do terminal para a URL real.
 
-### WASM files not loading in dev
+### Arquivos WASM não carregam no desenvolvimento
 
-If OpenSCAD WASM assets fail to load, ensure your browser allows WebAssembly. Most modern browsers support it by default.
+Se os assets do OpenSCAD WASM falharem ao carregar, certifique-se de que seu navegador permite WebAssembly. A maioria dos navegadores modernos suporta por padrão.
 
-### npm install fails with permission errors (Linux/macOS)
+### npm install falha com erros de permissão (Linux/macOS)
 
-Do **not** use `sudo npm install`. Instead, fix npm's permissions:
+**Não** use `sudo npm install`. Em vez disso, corrija as permissões do npm:
 ```bash
 mkdir ~/.npm-global
 npm config set prefix '~/.npm-global'
@@ -240,27 +240,27 @@ echo 'export PATH=~/.npm-global/bin:$PATH' >> ~/.bashrc
 source ~/.bashrc
 ```
 
-### Windows line endings issue (CRLF vs LF)
+### Problema de terminações de linha no Windows (CRLF vs LF)
 
-The project uses LF line endings. On Windows, configure git before cloning:
+O projeto usa terminações de linha LF. No Windows, configure o git antes de clonar:
 ```bash
 git config --global core.autocrlf input
 ```
 
 ---
 
-## Editor setup (recommended)
+## Configuração do editor (recomendado)
 
-**VS Code** with the following extensions:
+**VS Code** com as seguintes extensões:
 
-| Extension | Purpose |
+| Extensão | Finalidade |
 |---|---|
-| ESLint | Inline lint feedback |
-| Prettier | Auto-formatting |
-| Tailwind CSS IntelliSense | Class name autocomplete |
-| TypeScript (built-in) | Type checking |
+| ESLint | Feedback de lint inline |
+| Prettier | Formatação automática |
+| Tailwind CSS IntelliSense | Autocompletar nomes de classes |
+| TypeScript (built-in) | Verificação de tipos |
 
-Install all at once:
+Instalar todas de uma vez:
 ```bash
 code --install-extension dbaeumer.vscode-eslint
 code --install-extension esbenp.prettier-vscode

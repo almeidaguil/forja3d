@@ -1,0 +1,14 @@
+<svg viewBox="0 0 40 44" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Forja3D logo icon">
+  <!-- Isometric cube -->
+  <!-- Top face -->
+  <polygon points="20,2 38,12 20,22 2,12" fill="#fb923c"/>
+  <!-- Left face -->
+  <polygon points="2,12 20,22 20,42 2,32" fill="#c2410c"/>
+  <!-- Right face -->
+  <polygon points="20,22 38,12 38,32 20,42" fill="#ea580c"/>
+  <!-- Edge highlights -->
+  <polyline points="20,2 38,12 38,32 20,42 2,32 2,12 20,2" fill="none" stroke="#0f0f0f" stroke-width="0.5" stroke-opacity="0.3"/>
+  <line x1="20" y1="22" x2="20" y2="42" stroke="#0f0f0f" stroke-width="0.5" stroke-opacity="0.3"/>
+  <line x1="20" y1="22" x2="38" y2="12" stroke="#0f0f0f" stroke-width="0.5" stroke-opacity="0.3"/>
+  <line x1="20" y1="22" x2="2" y2="12" stroke="#0f0f0f" stroke-width="0.5" stroke-opacity="0.3"/>
+</svg>

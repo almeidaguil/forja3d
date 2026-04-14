@@ -1,32 +1,32 @@
-# ADR 0001 — Client-side only rendering in V1
+# ADR 0001 — Renderização exclusivamente client-side na V1
 
-**Date:** 2026-04-14
-**Status:** Accepted
+**Data:** 2026-04-14
+**Status:** Aceito
 
-## Context
+## Contexto
 
-Forja3D needs to generate 3D models from user parameters and images. This requires a rendering engine (OpenSCAD or Three.js). We need to decide whether rendering happens on a server or in the browser.
+O Forja3D precisa gerar modelos 3D a partir de parâmetros e imagens fornecidos pelo usuário. Isso requer um motor de renderização (OpenSCAD ou Three.js). Precisamos decidir se a renderização acontece em um servidor ou no navegador.
 
-## Decision
+## Decisão
 
-All rendering in V1 is **client-side only**. No backend server is required.
+Toda a renderização na V1 é **exclusivamente client-side**. Nenhum servidor backend é necessário.
 
-## Rationale
+## Justificativa
 
-- V1 is a personal project hosted on GitHub Pages, which is static-only (no server execution)
-- Eliminates infrastructure costs and complexity
-- OpenSCAD can be compiled to WebAssembly and run in the browser
-- Three.js runs natively in the browser and can extrude SVG paths to 3D geometry
-- Browser download is sufficient for STL export — no cloud storage needed
+- A V1 é um projeto pessoal hospedado no GitHub Pages, que é apenas estático (sem execução de servidor)
+- Elimina custos e complexidade de infraestrutura
+- O OpenSCAD pode ser compilado para WebAssembly e executado no navegador
+- O Three.js roda nativamente no navegador e pode extrudar caminhos SVG em geometria 3D
+- O download pelo navegador é suficiente para exportação STL — sem necessidade de armazenamento em nuvem
 
-## Consequences
+## Consequências
 
-- **Positive**: Zero hosting cost, no backend to maintain, simple deployment
-- **Positive**: No latency from network round-trips
-- **Negative**: WASM compilation is slower than native OpenSCAD binary
-- **Negative**: Large WASM binary increases initial page load (~20–30MB)
-- **Negative**: No persistent user data, no generation history
+- **Positivo**: Custo zero de hospedagem, sem backend para manter, implantação simples
+- **Positivo**: Sem latência de viagens de ida e volta pela rede
+- **Negativo**: A compilação WASM é mais lenta do que o binário nativo do OpenSCAD
+- **Negativo**: O binário WASM grande aumenta o carregamento inicial da página (~20–30MB)
+- **Negativo**: Sem dados persistentes do usuário, sem histórico de gerações
 
-## V2 migration path
+## Caminho de migração para V2
 
-Replace `IOpenScadRenderer`'s WASM implementation with an HTTP adapter that calls `/api/generate`. No domain or use case code changes required. See [V2_ROADMAP.md](../V2_ROADMAP.md#server-side-rendering).
+Substituir a implementação WASM do `IOpenScadRenderer` por um adaptador HTTP que chama `/api/generate`. Nenhuma alteração em código de domínio ou casos de uso é necessária. Veja [V2_ROADMAP.md](../V2_ROADMAP.md#renderização-server-side).
