@@ -12,12 +12,13 @@ export default function App() {
 
   return (
     <div className="flex flex-col min-h-svh bg-zinc-950">
-      <nav className="border-b border-zinc-800 px-6 py-4 flex items-center justify-between">
+      <nav className="border-b border-zinc-800 px-6 py-3 flex items-center justify-between">
         <button
           onClick={() => setRoute({ page: 'home' })}
-          className="text-xl font-bold text-white tracking-tight hover:text-orange-400 transition-colors"
+          className="hover:opacity-80 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 rounded"
+          aria-label={APP_NAME}
         >
-          {APP_NAME}
+          <img src="/forja3d/logo.svg" alt={APP_NAME} className="h-8 w-auto" />
         </button>
         <a
           href="https://github.com/almeidaguil/forja3d"

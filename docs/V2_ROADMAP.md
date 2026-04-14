@@ -1,73 +1,73 @@
-# V2 Roadmap — Forja3D
+# Roadmap V2 — Forja3D
 
-This document tracks everything that needs to be designed, built, or migrated when evolving Forja3D from a static client-side tool (V1) into a full product with authentication, payments, and a backend.
+Este documento registra tudo que precisa ser projetado, construído ou migrado ao evoluir o Forja3D de uma ferramenta estática client-side (V1) para um produto completo com autenticação, pagamentos e backend.
 
-Update this document whenever a V1 decision has a V2 implication. Also look for `// V2:` comments in the source code.
+Atualize este documento sempre que uma decisão da V1 tiver implicação na V2. Procure também por comentários `// V2:` no código-fonte.
 
 ---
 
-## V1 → V2 transition summary
+## Resumo da transição V1 → V2
 
-| Area | V1 (current) | V2 (target) |
+| Área | V1 (atual) | V2 (alvo) |
 |---|---|---|
-| Hosting | GitHub Pages (static) | Vercel / Railway + backend API |
-| Rendering | Client-side (OpenSCAD WASM + Three.js) | Server-side (Node.js + OpenSCAD binary) |
-| Authentication | None | Google OAuth / email (Auth.js or Supabase) |
-| User data | None | User profile, saved models, history |
-| Payments | None | Stripe Checkout + credit system |
-| File storage | None (direct download) | S3 (or Supabase Storage) for generated files |
-| Model catalog | Static JSON files in repo | Database (Postgres) via API |
-| Preview format | STL only | STL + 3MF |
-| Languages | PT-BR only | PT-BR, EN-US, ES |
-| Analytics | None | PostHog or Plausible |
+| Hospedagem | GitHub Pages (estático) | Vercel / Railway + API backend |
+| Renderização | Client-side (OpenSCAD WASM + Three.js) | Server-side (Node.js + binário OpenSCAD) |
+| Autenticação | Nenhuma | Google OAuth / email (Auth.js ou Supabase) |
+| Dados do usuário | Nenhum | Perfil de usuário, modelos salvos, histórico |
+| Pagamentos | Nenhum | Stripe Checkout + sistema de créditos |
+| Armazenamento de arquivos | Nenhum (download direto) | S3 (ou Supabase Storage) para arquivos gerados |
+| Catálogo de modelos | Arquivos JSON estáticos no repositório | Banco de dados (Postgres) via API |
+| Formato de preview | Apenas STL | STL + 3MF |
+| Idiomas | Apenas PT-BR | PT-BR, EN-US, ES |
+| Analytics | Nenhum | PostHog ou Plausible |
 
 ---
 
-## Backend API
+## API Backend
 
-V2 requires a REST (or tRPC) API. Proposed endpoints:
+A V2 requer uma API REST (ou tRPC). Endpoints propostos:
 
 ```
-GET  /api/models              → list all models with metadata
-GET  /api/models/:slug        → get single model config and parameters
-POST /api/generate            → compile model server-side, return file URL
-GET  /api/user/me             → authenticated user profile
-GET  /api/user/history        → user's generation history
-POST /api/credits/checkout    → create Stripe Checkout session
-POST /api/webhooks/stripe     → handle Stripe payment events
+GET  /api/models              → listar todos os modelos com metadados
+GET  /api/models/:slug        → obter configuração e parâmetros de um modelo
+POST /api/generate            → compilar modelo no servidor, retornar URL do arquivo
+GET  /api/user/me             → perfil do usuário autenticado
+GET  /api/user/history        → histórico de gerações do usuário
+POST /api/credits/checkout    → criar sessão do Stripe Checkout
+POST /api/webhooks/stripe     → tratar eventos de pagamento do Stripe
 ```
 
-### V1 impact
+### Impacto na V1
 
-The `generateModel` use case in `src/application/useCases/generateModel/` must be designed so the rendering step is swappable. In V1 it calls `IOpenScadRenderer` (WASM). In V2, it should call `IOpenScadRenderer` backed by an HTTP call to `/api/generate`. No application or domain code should change — only the infrastructure adapter.
+O caso de uso `generateModel` em `src/application/useCases/generateModel/` deve ser projetado de forma que a etapa de renderização seja substituível. Na V1, ele chama `IOpenScadRenderer` (WASM). Na V2, deve chamar `IOpenScadRenderer` respaldado por uma chamada HTTP para `/api/generate`. Nenhum código de aplicação ou domínio deve mudar — apenas o adaptador de infraestrutura.
 
-**Action required in V1**: Ensure `IOpenScadRenderer` interface is stable and not tightly coupled to WASM internals.
-
----
-
-## Authentication
-
-V2 users must register and log in before generating models beyond a free tier.
-
-### Recommended stack
-
-- **Auth.js** (formerly NextAuth) if migrating to Next.js
-- **Supabase Auth** if staying with a plain Vite + separate backend architecture
-- **Clerk** as a managed alternative (faster to ship)
-
-### V1 impact
-
-No auth code should exist in V1. However, the routing structure in `src/presentation/pages/` should be designed to accommodate protected routes in V2.
-
-**Action required in V1**: Use a `router` abstraction (React Router or TanStack Router) so that auth guards can be added without rewriting page structure.
+**Ação necessária na V1**: Garantir que a interface `IOpenScadRenderer` seja estável e não esteja fortemente acoplada aos internos do WASM.
 
 ---
 
-## Credit system
+## Autenticação
 
-Each model generation costs credits. Users buy credit packs via Stripe.
+Os usuários da V2 devem se registrar e fazer login antes de gerar modelos além de uma camada gratuita.
 
-### Data model
+### Stack recomendado
+
+- **Auth.js** (anteriormente NextAuth) se migrar para Next.js
+- **Supabase Auth** se permanecer com arquitetura Vite + backend separado
+- **Clerk** como alternativa gerenciada (entrega mais rápida)
+
+### Impacto na V1
+
+Nenhum código de autenticação deve existir na V1. No entanto, a estrutura de rotas em `src/presentation/pages/` deve ser projetada para acomodar rotas protegidas na V2.
+
+**Ação necessária na V1**: Usar uma abstração de `router` (React Router ou TanStack Router) para que guardas de autenticação possam ser adicionados sem reescrever a estrutura de páginas.
+
+---
+
+## Sistema de créditos
+
+Cada geração de modelo custa créditos. Os usuários compram pacotes de créditos via Stripe.
+
+### Modelo de dados
 
 ```
 User {
@@ -96,113 +96,113 @@ CreditPack {
 }
 ```
 
-### Credit cost per model (proposed)
+### Custo em créditos por modelo (proposto)
 
-| Model type | Credits |
+| Tipo de modelo | Créditos |
 |---|---|
-| Simple parametric (keychain, sign) | 1 |
-| Image-based (cookie cutter, stamp) | 1 |
-| Complex multi-part | 2 |
+| Paramétrico simples (chaveiro, placa) | 1 |
+| Baseado em imagem (cortador de biscoito, carimbo) | 1 |
+| Multi-parte complexo | 2 |
 
-### V1 impact
+### Impacto na V1
 
-The `GenerationResult` domain type should include a `creditsRequired` field so the UI can show it without a backend call. In V1 this will be hardcoded; in V2 it comes from the API.
+O tipo de domínio `GenerationResult` deve incluir um campo `creditsRequired` para que a UI possa exibi-lo sem uma chamada ao backend. Na V1, isso será fixo no código; na V2, virá da API.
 
-**Action required in V1**: Add `creditsRequired: number` to the `Model` entity even though it's unused in V1.
-
----
-
-## Server-side rendering
-
-V1 uses OpenSCAD WASM in the browser. V2 will compile OpenSCAD on the server for:
-- Faster generation (native binary vs. WASM)
-- Better error reporting
-- Ability to serve cached results
-
-### Migration path
-
-1. In V1, `OpenScadWasmRenderer` implements `IOpenScadRenderer` using WASM
-2. In V2, create `OpenScadApiRenderer` that POSTs the SCAD code to `/api/generate` and returns the STL blob
-3. Inject the correct adapter via dependency injection at the app root
-4. No use case or domain code changes
-
-### V1 impact
-
-Keep `.scad` templates as pure strings — no WASM-specific APIs embedded in them.
+**Ação necessária na V1**: Adicionar `creditsRequired: number` à entidade `Model` mesmo que não seja usado na V1.
 
 ---
 
-## File storage
+## Renderização server-side
 
-V1 generates STL in memory and triggers a browser download immediately. V2 must:
-- Store generated files in S3 / Supabase Storage
-- Associate files with user accounts
-- Allow re-download from user history
+A V1 usa OpenSCAD WASM no navegador. A V2 compilará OpenSCAD no servidor para:
+- Geração mais rápida (binário nativo vs. WASM)
+- Melhor relatório de erros
+- Capacidade de servir resultados em cache
 
-### V1 impact
+### Caminho de migração
 
-The `exportStl` use case should return an `ArrayBuffer`. In V1, the presentation layer triggers `URL.createObjectURL()` to download it. In V2, the use case will instead call `IFileStorage.upload()`. Keep download logic in the presentation layer, not in the use case.
+1. Na V1, `OpenScadWasmRenderer` implementa `IOpenScadRenderer` usando WASM
+2. Na V2, criar `OpenScadApiRenderer` que envia o código SCAD via POST para `/api/generate` e retorna o blob STL
+3. Injetar o adaptador correto via injeção de dependência na raiz da aplicação
+4. Nenhuma alteração em casos de uso ou código de domínio
 
----
+### Impacto na V1
 
-## 3MF export
-
-V1 exports STL only. V2 should also support 3MF (better color information, supports multi-material slicers like Bambu Studio).
-
-### V1 impact
-
-The `IStlExporter` port should be renamed to `IModelExporter` with a `format` parameter, or an additional `IThreeMfExporter` port should be added alongside it.
+Manter os templates `.scad` como strings puras — sem APIs específicas do WASM embutidas neles.
 
 ---
 
-## Internationalization (i18n)
+## Armazenamento de arquivos
 
-V2 targets PT-BR, EN-US, and ES.
+A V1 gera STL na memória e aciona um download no navegador imediatamente. A V2 deve:
+- Armazenar arquivos gerados no S3 / Supabase Storage
+- Associar arquivos às contas de usuário
+- Permitir novo download a partir do histórico do usuário
 
-### Recommended library: `react-i18next`
+### Impacto na V1
 
-### V1 impact
+O caso de uso `exportStl` deve retornar um `ArrayBuffer`. Na V1, a camada de apresentação aciona `URL.createObjectURL()` para baixá-lo. Na V2, o caso de uso chamará `IFileStorage.upload()` em vez disso. Manter a lógica de download na camada de apresentação, não no caso de uso.
 
-All user-facing strings in V1 should live in component props or constants, never hardcoded inline in JSX. This makes extraction to translation keys straightforward in V2.
+---
 
-**Action required in V1**: Never hardcode display strings inline. Use a `label` prop or a shared constants file.
+## Exportação 3MF
+
+A V1 exporta apenas STL. A V2 também deve suportar 3MF (melhor informação de cor, suporta slicers multi-material como Bambu Studio).
+
+### Impacto na V1
+
+A porta `IStlExporter` deve ser renomeada para `IModelExporter` com um parâmetro `format`, ou uma porta adicional `IThreeMfExporter` deve ser adicionada junto a ela.
+
+---
+
+## Internacionalização (i18n)
+
+A V2 tem como alvo PT-BR, EN-US e ES.
+
+### Biblioteca recomendada: `react-i18next`
+
+### Impacto na V1
+
+Todas as strings voltadas ao usuário na V1 devem residir em props de componentes ou constantes, nunca codificadas diretamente no JSX. Isso facilita a extração para chaves de tradução na V2.
+
+**Ação necessária na V1**: Nunca codificar strings de exibição diretamente. Usar uma prop `label` ou um arquivo de constantes compartilhado.
 
 ---
 
 ## Analytics
 
-V2 will track:
-- Which models are most generated
-- Conversion rate (preview → download → purchase)
-- Error rates per model
+A V2 rastreará:
+- Quais modelos são mais gerados
+- Taxa de conversão (preview → download → compra)
+- Taxas de erro por modelo
 
-### Recommended: PostHog (open source, self-hostable) or Plausible (privacy-first)
+### Recomendado: PostHog (open source, auto-hospedável) ou Plausible (foco em privacidade)
 
-### V1 impact
+### Impacto na V1
 
-None. Do not add analytics tracking in V1.
-
----
-
-## Model catalog — database migration
-
-V1 models are defined as static JSON files in `src/data/models/`. V2 will serve them from a database.
-
-### Migration path
-
-1. V1 JSON files become the seed data for the database
-2. The `IModelRepository` port (to be defined in V1's application layer) will have:
-   - V1 implementation: reads from `src/data/models/*.json`
-   - V2 implementation: fetches from `/api/models`
-3. No domain or use case code changes on migration
-
-**Action required in V1**: Define and use an `IModelRepository` interface in the application layer. Do not import JSON files directly in components.
+Nenhum. Não adicionar rastreamento de analytics na V1.
 
 ---
 
-## Infrastructure / hosting
+## Catálogo de modelos — migração para banco de dados
 
-### V2 target architecture
+Os modelos da V1 são definidos como arquivos JSON estáticos em `src/data/models/`. A V2 os servirá a partir de um banco de dados.
+
+### Caminho de migração
+
+1. Os arquivos JSON da V1 se tornam os dados de seed do banco de dados
+2. A porta `IModelRepository` (a ser definida na camada de aplicação da V1) terá:
+   - Implementação V1: lê de `src/data/models/*.json`
+   - Implementação V2: busca de `/api/models`
+3. Nenhuma alteração em código de domínio ou casos de uso na migração
+
+**Ação necessária na V1**: Definir e usar uma interface `IModelRepository` na camada de aplicação. Não importar arquivos JSON diretamente em componentes.
+
+---
+
+## Infraestrutura / hospedagem
+
+### Arquitetura alvo da V2
 
 ```
 Browser → Vercel (frontend, Next.js or SPA)
@@ -213,36 +213,36 @@ Browser → Vercel (frontend, Next.js or SPA)
               → Google OAuth (auth)
 ```
 
-### Domain / custom URL
+### Domínio / URL personalizada
 
-Register a custom domain (e.g., `forja3d.com`) and point it to Vercel. Configure DNS before V2 launch.
-
----
-
-## V2 launch checklist (future reference)
-
-- [ ] Backend API implemented and deployed
-- [ ] Authentication working (Google OAuth + email)
-- [ ] Credit system implemented
-- [ ] Stripe Checkout tested end-to-end
-- [ ] S3 storage for generated files
-- [ ] STL + 3MF export
-- [ ] PT-BR, EN-US, ES translations complete
-- [ ] Custom domain configured
-- [ ] Analytics set up
-- [ ] Error monitoring (Sentry or similar) set up
-- [ ] Rate limiting on API endpoints
-- [ ] Terms of service and privacy policy pages
-- [ ] Cookie banner (LGPD / GDPR)
+Registrar um domínio personalizado (ex: `forja3d.com`) e apontá-lo para a Vercel. Configurar o DNS antes do lançamento da V2.
 
 ---
 
-## Notes from V1 development
+## Checklist de lançamento V2 (referência futura)
 
-> This section is updated as V1 is built. Each entry references the relevant source file and describes the V2 implication.
+- [ ] API backend implementada e implantada
+- [ ] Autenticação funcionando (Google OAuth + email)
+- [ ] Sistema de créditos implementado
+- [ ] Stripe Checkout testado de ponta a ponta
+- [ ] Armazenamento S3 para arquivos gerados
+- [ ] Exportação STL + 3MF
+- [ ] Traduções PT-BR, EN-US, ES completas
+- [ ] Domínio personalizado configurado
+- [ ] Analytics configurado
+- [ ] Monitoramento de erros (Sentry ou similar) configurado
+- [ ] Rate limiting nos endpoints da API
+- [ ] Páginas de termos de serviço e política de privacidade
+- [ ] Banner de cookies (LGPD / GDPR)
 
-| Date | File | Note |
+---
+
+## Notas do desenvolvimento V1
+
+> Esta seção é atualizada conforme a V1 é construída. Cada entrada referencia o arquivo-fonte relevante e descreve a implicação para a V2.
+
+| Data | Arquivo | Nota |
 |---|---|---|
-| 2026-04-14 | `src/application/useCases/generateModel/` | `IOpenScadRenderer` interface must remain stable for V2 HTTP adapter swap |
-| 2026-04-14 | `src/domain/model/` | Add `creditsRequired: number` to `Model` entity — unused in V1, required in V2 |
-| 2026-04-14 | `src/infrastructure/three/ThreeStlExporter` | Rename port to `IModelExporter` before V2 to accommodate 3MF |
+| 2026-04-14 | `src/application/useCases/generateModel/` | A interface `IOpenScadRenderer` deve permanecer estável para a troca de adaptador HTTP na V2 |
+| 2026-04-14 | `src/domain/model/` | Adicionar `creditsRequired: number` à entidade `Model` — não utilizado na V1, obrigatório na V2 |
+| 2026-04-14 | `src/infrastructure/three/ThreeStlExporter` | Renomear porta para `IModelExporter` antes da V2 para acomodar 3MF |

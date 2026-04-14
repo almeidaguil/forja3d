@@ -1,37 +1,37 @@
-# ADR 0003 — Three.js ExtrudeGeometry for image-based models
+# ADR 0003 — Three.js ExtrudeGeometry para modelos baseados em imagem
 
-**Date:** 2026-04-14
-**Status:** Accepted
+**Data:** 2026-04-14
+**Status:** Aceito
 
-## Context
+## Contexto
 
-Image-based models (cookie cutters, stamps) need to convert a 2D image outline into a 3D shape. This can be done via OpenSCAD (`linear_extrude` + imported SVG) or directly in Three.js.
+Modelos baseados em imagem (cortadores de biscoito, carimbos) precisam converter o contorno de uma imagem 2D em uma forma 3D. Isso pode ser feito via OpenSCAD (`linear_extrude` + SVG importado) ou diretamente no Three.js.
 
-## Decision
+## Decisão
 
-Use **Three.js `ExtrudeGeometry`** for all image-based models (cookie cutters, stamps).
+Usar **`ExtrudeGeometry` do Three.js** para todos os modelos baseados em imagem (cortadores de biscoito, carimbos).
 
-## Rationale
+## Justificativa
 
-- No WASM compilation step — geometry is built in milliseconds
-- Real-time preview updates as parameters change (height, thickness, offset)
-- `SVGLoader` in Three.js parses SVG paths directly to `ShapePath` objects
-- `ExtrudeGeometry` handles holes, concave polygons, and complex outlines
-- STL export works directly from Three.js `BufferGeometry` via `STLExporter`
+- Sem etapa de compilação WASM — a geometria é construída em milissegundos
+- Atualizações de preview em tempo real conforme os parâmetros mudam (altura, espessura, offset)
+- O `SVGLoader` do Three.js analisa caminhos SVG diretamente em objetos `ShapePath`
+- O `ExtrudeGeometry` lida com furos, polígonos côncavos e contornos complexos
+- A exportação STL funciona diretamente a partir da `BufferGeometry` do Three.js via `STLExporter`
 
-## Alternatives considered
+## Alternativas consideradas
 
-- **OpenSCAD WASM + SVG import**: works but adds 2–10 second compilation delay for every parameter change; poor UX for interactive editing
-- **Three.js + CSG**: would allow boolean operations but not needed for cookie cutters
+- **OpenSCAD WASM + importação SVG**: funciona, mas adiciona um atraso de compilação de 2 a 10 segundos a cada mudança de parâmetro; experiência ruim para edição interativa
+- **Three.js + CSG**: permitiria operações booleanas, mas não são necessárias para cortadores de biscoito
 
-## Consequences
+## Consequências
 
-- **Positive**: Instant feedback on parameter changes
-- **Positive**: No dependency on WASM for the most popular model types
-- **Positive**: Colored preview (material color) works out of the box
-- **Negative**: Limited to extrusion-based shapes; complex 3D boolean operations require OpenSCAD
-- **Negative**: Three.js `SVGLoader` has edge cases with malformed SVG paths
+- **Positivo**: Feedback instantâneo nas mudanças de parâmetros
+- **Positivo**: Sem dependência de WASM para os tipos de modelo mais populares
+- **Positivo**: Preview colorido (cor do material) funciona nativamente
+- **Negativo**: Limitado a formas baseadas em extrusão; operações booleanas 3D complexas requerem OpenSCAD
+- **Negativo**: O `SVGLoader` do Three.js tem casos extremos com caminhos SVG malformados
 
-## Implementation note
+## Nota de implementação
 
-The `ThreeGeometryBuilder` infrastructure adapter handles both SVG-from-image and SVG-from-builtin-shapes code paths. Builtin shapes (circle, square, star, hexagon) are generated as Three.js `Shape` objects without going through SVG.
+O adaptador de infraestrutura `ThreeGeometryBuilder` lida tanto com o caminho SVG-a-partir-de-imagem quanto com o caminho SVG-a-partir-de-formas-embutidas. As formas embutidas (círculo, quadrado, estrela, hexágono) são geradas como objetos `Shape` do Three.js sem passar por SVG.
