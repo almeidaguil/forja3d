@@ -26,10 +26,11 @@ function sampleDarkness(d: Uint8ClampedArray, w: number, h: number, u: number, v
          px(x1, y1) * tx * ty
 }
 
-// Build top (heightmap) and bottom (flat) vertex grids
+// Build top (stamp relief) and bottom (flat) vertex grids.
+// Pixels darker than `threshold` (0–1) are raised to reliefH; lighter pixels are flat (z=0).
 function buildGrids(
   img: ImageData, res: number, size: number,
-  baseH: number, reliefH: number, mirror: boolean,
+  baseH: number, reliefH: number, threshold: number, mirror: boolean,
 ): [V3[][], V3[][]] {
   const { data, width, height } = img
   const top: V3[][] = [], bot: V3[][] = []
@@ -41,7 +42,7 @@ function buildGrids(
       const dark = sampleDarkness(data, width, height, mirror ? 1 - u : u, v)
       const x = (u - 0.5) * size
       const y = (v - 0.5) * size
-      top[row].push(new THREE.Vector3(x, y, dark * reliefH))
+      top[row].push(new THREE.Vector3(x, y, dark > threshold ? reliefH : 0))
       bot[row].push(new THREE.Vector3(x, y, -baseH))
     }
   }
@@ -119,11 +120,11 @@ function toSTL(posArr: number[]): ArrayBuffer {
  */
 export class HeightmapStampBuilder implements IGeometryBuilder {
   build(config: ExtrudeConfig): ArrayBuffer {
-    const { imageData, targetSize = 60, depth = 5, stampRelief = 3, stampResolution = 80, mirror = true } = config
+    const { imageData, targetSize = 60, depth = 5, stampRelief = 3, stampResolution = 80, stampThreshold = 0.35, mirror = true } = config
     if (!imageData) throw new Error('HeightmapStampBuilder requires imageData')
 
     const res = Math.max(5, Math.min(200, stampResolution))
-    const [top, bot] = buildGrids(imageData, res, targetSize, depth, stampRelief, mirror)
+    const [top, bot] = buildGrids(imageData, res, targetSize, depth, stampRelief, stampThreshold, mirror)
 
     const posArr: number[] = []
     addTopFace(posArr, top, res)

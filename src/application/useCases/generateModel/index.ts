@@ -72,9 +72,10 @@ export async function generateModel(
     const depth = typeof values.baseHeight === 'number' ? values.baseHeight : 5
     const stampRelief = typeof values.reliefHeight === 'number' ? values.reliefHeight : 3
     const stampResolution = typeof values.stampResolution === 'number' ? values.stampResolution : 80
+    const stampThreshold = typeof values.threshold === 'number' ? values.threshold / 100 : 0.35
     const mirror = typeof values.mirror === 'boolean' ? values.mirror : true
 
-    const geometry = await deps.heightmapBuilder.build({ pathData: '', targetSize, depth, stampRelief, stampResolution, mirror, imageData })
+    const geometry = await deps.heightmapBuilder.build({ pathData: '', targetSize, depth, stampRelief, stampResolution, stampThreshold, mirror, imageData })
     return { status: 'success', geometry }
   }
 

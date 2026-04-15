@@ -30,6 +30,7 @@ export interface ExtrudeConfig {
   imageData?: ImageData
   stampResolution?: number
   stampRelief?: number
+  stampThreshold?: number
   mirror?: boolean
 }
 

@@ -41,6 +41,15 @@
       "unit": "mm"
     },
     {
+      "key": "threshold",
+      "type": "number",
+      "label": "Limiar de relevo (%)",
+      "default": 35,
+      "min": 5,
+      "max": 85,
+      "step": 5
+    },
+    {
       "key": "stampResolution",
       "type": "number",
       "label": "Resolução da malha",
