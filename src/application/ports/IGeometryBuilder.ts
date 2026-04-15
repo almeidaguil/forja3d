@@ -25,6 +25,12 @@ export interface ExtrudeConfig {
   stampBackHeight?: number
   /** Tolerance gap so the stamp fits inside the cutter (mm). Default 0.9 */
   stampCutterTolerance?: number
+
+  // Heightmap stamp fields
+  imageData?: ImageData
+  stampResolution?: number
+  stampRelief?: number
+  mirror?: boolean
 }
 
 export interface IGeometryBuilder {
