@@ -1,3 +1,4 @@
+import { useRef, useState } from 'react'
 import type { ChangeEvent, JSX } from 'react'
 import type { ParameterSchema, ParameterValue } from '../../../shared/types'
 
@@ -108,12 +109,64 @@ function SelectField({ param, value, onChange }: FieldProps): JSX.Element {
   )
 }
 
+function ImageField({ param, onChange }: FieldProps): JSX.Element {
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [fileName, setFileName] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  function handleFileChange(e: ChangeEvent<HTMLInputElement>): void {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const ACCEPTED_TYPES = ['image/png', 'image/jpeg', 'image/webp']
+    if (!ACCEPTED_TYPES.includes(file.type)) {
+      setError('Formato não suportado. Use PNG, JPG ou WEBP.')
+      return
+    }
+
+    const MAX_SIZE = 5 * 1024 * 1024 // 5 MB
+    if (file.size > MAX_SIZE) {
+      setError('Imagem muito grande. Máximo: 5 MB.')
+      return
+    }
+
+    setError(null)
+    setFileName(file.name)
+    onChange(param.key, file as unknown as ParameterValue)
+  }
+
+  return (
+    <div className="space-y-2">
+      <span className="text-sm text-zinc-300 block">{param.label}</span>
+      <div className="flex gap-2">
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+          onChange={handleFileChange}
+          className="sr-only"
+        />
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          className="px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-sm text-zinc-100 hover:border-orange-500 transition-colors"
+        >
+          {fileName ? '✓ Arquivo selecionado' : 'Escolher imagem'}
+        </button>
+        {fileName && <span className="text-xs text-zinc-400 py-2">{fileName}</span>}
+      </div>
+      {error && <p className="text-xs text-red-400">{error}</p>}
+    </div>
+  )
+}
+
 function ParameterField({ param, value, onChange }: FieldProps): JSX.Element {
   switch (param.type) {
     case 'number':  return <NumberField  param={param} value={value} onChange={onChange} />
     case 'color':   return <ColorField   param={param} value={value} onChange={onChange} />
     case 'boolean': return <BooleanField param={param} value={value} onChange={onChange} />
     case 'select':  return <SelectField  param={param} value={value} onChange={onChange} />
+    case 'image':   return <ImageField   param={param} value={value} onChange={onChange} />
     default:        return <StringField  param={param} value={value} onChange={onChange} />
   }
 }

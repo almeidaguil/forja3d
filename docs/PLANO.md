@@ -26,6 +26,7 @@
 | Roteamento por URL | 🔲 A implementar (V1 usa useState) |
 | Logo v2 (forja/faíscas) | ✅ Completo |
 | Documentação completa (PT) | ✅ Completo |
+| **ParameterForm com ImageField** | ✅ Completo (tipos dinâmicos) |
 
 **Site ao vivo:** https://almeidaguil.github.io/forja3d/
 
@@ -167,10 +168,37 @@ EOF
 
 ### 🔴 P1 — ModelEditor (principal feature da V1)
 
-O arquivo `src/presentation/pages/ModelEditor/index.tsx` é atualmente um placeholder.
-Precisa implementar, nesta ordem:
+**✅ CONCLUÍDO: ParameterForm com tipos dinâmicos**
+- Suportados: number (slider), color picker, boolean (toggle), select, string, **image**
+- ImageField com validação: PNG, JPG, WEBP; máx. 5 MB
+- Integrado em ModelEditor com formulário responsivo
+- Build: OK | Lint: OK | TypeScript strict: OK
+- **Branch:** `feature/parameter-form-image-field` → await PR review & merge to develop
 
-#### 1.1 Portas (interfaces) — `src/application/ports/`
+**⏳ PRÓXIMAS PARTES (ordem recomendada):**
+
+1. **ThreePreview** com geometria estática
+   - Canvas Three.js com OrbitControls
+   - Recebe BufferGeometry + color, atualiza ao vivo
+
+2. **ThreeGeometryBuilder** + **ThreeStlExporter**
+   - SVG path → BufferGeometry (ExtrudeGeometry)
+   - BufferGeometry → ArrayBuffer (.stl binário)
+
+3. **CanvasImageTracer**
+   - Imagem → SVG path (marching-squares + RDP)
+
+4. **OpenScadWasmRenderer** (para texto: keychain)
+   - Template + params → STL ArrayBuffer
+
+5. **Botão Download STL**
+   - Já estruturado, falta geometria gerada
+
+---
+
+**ARQUITETURA (referência para implementação das próximas partes):**
+
+#### Portas (interfaces) — `src/application/ports/`
 ```
 IImageTracer.ts         → traceja imagem → SVG path string
 IThreeGeometryBuilder.ts → SVG path → BufferGeometry extrudada
@@ -178,7 +206,7 @@ IStlExporter.ts         → BufferGeometry → ArrayBuffer (.stl binário)
 IOpenScadRenderer.ts    → template + params → STL ArrayBuffer
 ```
 
-#### 1.2 Adaptadores — `src/infrastructure/`
+#### Adaptadores — `src/infrastructure/`
 ```
 CanvasImageTracer.ts    → Canvas API (marching-squares) → implementa IImageTracer
 ThreeGeometryBuilder.ts → THREE.ExtrudeGeometry → implementa IThreeGeometryBuilder
@@ -186,32 +214,19 @@ ThreeStlExporter.ts     → THREE/examples STLExporter → implementa IStlExport
 OpenScadWasmRenderer.ts → openscad-wasm-prebuilt → implementa IOpenScadRenderer
 ```
 
-#### 1.3 Casos de Uso — `src/application/use-cases/`
+#### Casos de Uso — `src/application/use-cases/`
 ```
 generateModel.ts   → recebe Model + params, roteia para openscad ou three-extrude
 traceImage.ts      → recebe File (imagem), retorna SVG path
 exportStl.ts       → recebe geometry, retorna Blob para download
 ```
 
-#### 1.4 Componentes de Apresentação
+#### Componentes de Apresentação
 ```
-ParameterForm/     → formulário dinâmico baseado em Model.parameters[]
-  - renderiza input conforme ParameterType (text, number, boolean, select, color, image)
-  - upload de imagem com preview para tipos 'image'
-ThreePreview/      → canvas Three.js com OrbitControls, atualiza ao vivo
-  - recebe BufferGeometry + color
-  - mostra loading spinner durante geração
-ModelEditor/       → orquestra tudo: form + preview + botão download STL
+ParameterForm/     → ✅ PRONTO (tipos dinâmicos com ImageField)
+ThreePreview/      → ⏳ PRÓXIMO (canvas com OrbitControls)
+ModelEditor/       → ✅ ORQUESTRA (já integra form + preview + download)
 ```
-
-#### Ordem de implementação sugerida:
-1. `ParameterForm` com form funcional (sem preview ainda)
-2. `ThreePreview` com geometria estática de exemplo
-3. `ThreeGeometryBuilder` + `ThreeStlExporter`
-4. Integrar preview ao vivo para `three-extrude/image`
-5. `CanvasImageTracer` para upload de imagem
-6. `OpenScadWasmRenderer` para keychain (texto)
-7. Botão de download STL
 
 ---
 
@@ -295,5 +310,5 @@ Se você está retomando o trabalho e o chat foi perdido, siga estes passos:
 | 2026-04-14 | Criação deste arquivo de plano |
 | 2026-04-14 | Ambiente automatizado: `.nvmrc`, `.editorconfig`, `.vscode/`, `.mcp.json` com `${GITHUB_TOKEN}`, SETUP.md reescrito |
 | 2026-04-14 | Melhorias de geometria: bevel join (anti-spike), stamp deslocado, defaults intuitivos; revisão + merge develop→main |
-| 2026-04-14 | Revisão agentes (Revisor + Arquiteto): geometry fixes aprovadas, docs atualizados, build+lint OK; develop→main merged |
 | 2026-04-15 | Deploy validado: GitHub Pages online (HTTP 200), build passa (5.06s), nenhuma funcionalidade quebrada. Pronto para P1 (ModelEditor). |
+| 2026-04-15 | ParameterForm: adicionado ImageField (PNG/JPG/WEBP, max 5MB, validação). Branch feature/parameter-form-image-field pronta para PR. |
