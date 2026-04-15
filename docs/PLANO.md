@@ -15,13 +15,14 @@
 | Tipos de domínio | ✅ Completo |
 | Dados dos modelos (JSON) | ✅ 3 modelos criados |
 | Página Home (cards) | ✅ Completo |
-| Página ModelEditor | 🔲 Placeholder (a implementar) |
-| Preview 3D (Three.js) | 🔲 A implementar |
-| Formulário de parâmetros | 🔲 A implementar |
-| Upload de imagem | 🔲 A implementar |
-| Export STL | 🔲 A implementar |
+| Página ModelEditor | ✅ Funcional (form + preview) |
+| Preview 3D (Three.js) | ✅ Completo |
+| Formulário de parâmetros | ✅ Completo |
+| Upload de imagem | ✅ Completo |
+| Export STL | ✅ Completo |
+| Offset de polígono (bevel join) | ✅ Completo |
 | OpenSCAD WASM renderer | 🔲 A implementar |
-| Canvas image tracer | 🔲 A implementar |
+| Canvas image tracer | ✅ Completo (marching-squares + RDP) |
 | Roteamento por URL | 🔲 A implementar (V1 usa useState) |
 | Logo v2 (forja/faíscas) | ✅ Completo |
 | Documentação completa (PT) | ✅ Completo |
@@ -293,3 +294,4 @@ Se você está retomando o trabalho e o chat foi perdido, siga estes passos:
 | 2026-04-14 | Logo v2 (conceito forja: gradientes, faíscas, brilho), docs em PT, Husky+commitlint |
 | 2026-04-14 | Criação deste arquivo de plano |
 | 2026-04-14 | Ambiente automatizado: `.nvmrc`, `.editorconfig`, `.vscode/`, `.mcp.json` com `${GITHUB_TOKEN}`, SETUP.md reescrito |
+| 2026-04-14 | Melhorias de geometria: bevel join (anti-spike), stamp deslocado, defaults intuitivos; revisão + merge develop→main |
