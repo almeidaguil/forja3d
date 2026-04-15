@@ -128,7 +128,7 @@ export function ModelEditor({ slug, onBack }: ModelEditorProps): JSX.Element {
   const { stlBuffer, isLoading, error, generate, download } = useModelGenerator(model, values, imageFile)
 
   const needsImage =
-    model?.renderStrategy.type === 'three-extrude' &&
+    (model?.renderStrategy.type === 'three-extrude' || model?.renderStrategy.type === 'three-heightmap') &&
     model.renderStrategy.svgSource === 'image'
 
   const canGenerate = !!model && (!needsImage || !!imageFile)

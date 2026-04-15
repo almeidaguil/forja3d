@@ -7,6 +7,11 @@ export interface ExtrudeConfig {
   wallThickness?: number
   mode?: GeometryMode
   stampDepth?: number
+  // Heightmap stamp fields
+  imageData?: ImageData
+  stampResolution?: number
+  stampRelief?: number
+  mirror?: boolean
 }
 
 export interface IGeometryBuilder {
