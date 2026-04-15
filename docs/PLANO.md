@@ -319,4 +319,5 @@ Se você está retomando o trabalho e o chat foi perdido, siga estes passos:
 | 2026-04-14 | Investigação de suavização do contorno: Chaikin (❌ causa auto-interseções → "mesh not closed"), Canvas blur (⚠️ altera forma do polígono). Revertido ao tracer original. Ver `docs/COOKIE_CUTTER_RESEARCH.md` seção 10. |
 | 2026-04-15 | Deploy validado: GitHub Pages online (HTTP 200), build passa, nenhuma funcionalidade quebrada. |
 | 2026-04-15 | ParameterForm: adicionado ImageField (PNG/JPG/WEBP, max 5MB, validação). Mergeado em develop. |
+| 2026-04-15 | Retomada: leitura de contexto completo, criação de memórias persistentes para sessões futuras. |
 | 2026-04-15 | Rebase de `feature/openscad-cookie-cutter` sobre `develop` atualizado. Conflito de PLANO.md resolvido manualmente. |
