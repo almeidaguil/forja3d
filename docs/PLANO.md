@@ -296,3 +296,4 @@ Se você está retomando o trabalho e o chat foi perdido, siga estes passos:
 | 2026-04-14 | Ambiente automatizado: `.nvmrc`, `.editorconfig`, `.vscode/`, `.mcp.json` com `${GITHUB_TOKEN}`, SETUP.md reescrito |
 | 2026-04-14 | Melhorias de geometria: bevel join (anti-spike), stamp deslocado, defaults intuitivos; revisão + merge develop→main |
 | 2026-04-14 | Revisão agentes (Revisor + Arquiteto): geometry fixes aprovadas, docs atualizados, build+lint OK; develop→main merged |
+| 2026-04-15 | Deploy validado: GitHub Pages online (HTTP 200), build passa (5.06s), nenhuma funcionalidade quebrada. Pronto para P1 (ModelEditor). |
