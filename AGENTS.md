@@ -37,6 +37,17 @@ Identifique a tarefa e adote **apenas** o papel correspondente:
 ```
 Tipos aceitos: `feat` `fix` `docs` `refactor` `test` `chore` `style` `ci`
 
+### Regra de ouro — commits só com código funcionando (inegociável)
+
+**Antes de qualquer `git commit`, execute sempre:**
+```bash
+npm run build && npm run lint
+```
+- `build` com erro → **não commite**
+- `lint` com erro → **não commite**
+- Commits "WIP", "de progresso" ou com código quebrado são proibidos
+- Cada commit deve representar um estado funcional e completo
+
 ### Idioma
 - Código (variáveis, funções, tipos, interfaces): **inglês**
 - Comentários, commits, documentação: **português**

@@ -86,10 +86,27 @@ npm run lint         # ESLint
 git status           # ver o que mudou
 ```
 
+## Regra de ouro — antes de qualquer commit
+
+**Nunca commite sem passar pelos três comandos abaixo:**
+
+```bash
+npm run build   # TypeScript + Vite — zero erros de tipo e de build
+npm run lint    # ESLint — zero warnings críticos
+```
+
+- Se `build` falhar → **não commite**. Corrija o erro primeiro.
+- Se `lint` reportar erros → **não commite**. Corrija ou justifique o `// eslint-disable`.
+- Commits com código quebrado, com erros de tipo, ou com warnings ignorados **não são aceitos**.
+- Commits "de progresso" ou "WIP" também não — cada commit deve representar um estado funcional e completo da feature ou correção.
+
 ## Fluxo de entrega (obrigatório)
 
 ```bash
-# 1. Commitar na branch de feature
+# 0. ANTES de commitar — validação obrigatória
+npm run build && npm run lint
+
+# 1. Só então commitar
 git add src/path/alterado.ts
 git commit -m "feat(scope): descrição em português"
 
