@@ -13,11 +13,13 @@
   },
   "dependencies": {
     "@types/three": "^0.183.1",
+    "clipper-lib": "^6.4.2",
     "openscad-wasm-prebuilt": "^1.2.0",
     "potrace": "^2.1.8",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
-    "three": "^0.183.2"
+    "three": "^0.183.2",
+    "three-bvh-csg": "^0.0.18"
   },
   "devDependencies": {
     "@commitlint/cli": "^20.5.0",

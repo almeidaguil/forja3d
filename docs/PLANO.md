@@ -17,12 +17,14 @@
 | Página Home (cards) | ✅ Completo |
 | Página ModelEditor | ✅ Funcional (form + preview) |
 | Preview 3D (Three.js) | ✅ Completo |
-| Formulário de parâmetros | ✅ Completo |
+| Formulário de parâmetros | ✅ Completo (com ImageField) |
 | Upload de imagem | ✅ Completo |
 | Export STL | ✅ Completo |
 | Offset de polígono (bevel join) | ✅ Completo |
-| OpenSCAD WASM renderer | 🔲 A implementar |
-| Canvas image tracer | ✅ Completo (marching-squares + RDP) |
+| OpenSCAD WASM renderer | ✅ Implementado (builder principal) |
+| Canvas image tracer | ⚠️ Funcional, qualidade de contorno a melhorar |
+| Cortador de biscoito — modo Cortador | ⚠️ Geometria ok em polígonos simples; instável em polígonos muito côncavos |
+| Cortador de biscoito — modo Cortador+Carimbo | ⚠️ Renderiza os dois objetos; visual precisa refinamento |
 | Roteamento por URL | 🔲 A implementar (V1 usa useState) |
 | Logo v2 (forja/faíscas) | ✅ Completo |
 | Documentação completa (PT) | ✅ Completo |
@@ -42,6 +44,7 @@
   - `commit-msg` → `commitlint` (Conventional Commits obrigatório)
 - **commitlint** com tipos: `feat|fix|docs|refactor|test|chore|style|ci`
 - **GitHub Actions** deploy automático em push para `main` (Node 22, artifact upload)
+- **CI auto-release** workflow para `develop→main` automático
 
 ### Git e Conta Pessoal
 - Repositório: `https://github.com/almeidaguil/forja3d`
@@ -75,15 +78,18 @@ interface Model {
 ```
 
 ### Modelos criados (`src/data/models/`)
-| Arquivo | Estratégia | Parâmetros principais |
-|---------|-----------|----------------------|
-| `cookie-cutter.json` | `three-extrude / image` | cutterHeight, wallThickness, outlineOffset, targetSize, threshold, color |
-| `stamp.json` | `three-extrude / image` | baseHeight, reliefHeight, targetSize, threshold, mirror, color |
-| `keychain.json` | `openscad` | text, fontSize, depth, padding, thickness, color |
+| Arquivo | Estratégia | Parâmetros principais | Status |
+|---------|-----------|----------------------|--------|
+| `cookie-cutter.json` | `three-extrude / image` | cutterHeight, wallThickness, tipWidth, chamferHeight, baseWidth, baseHeight, targetSize, threshold, color | ⚠️ Ver P0 |
+| `stamp.json` | `three-extrude / image` | baseHeight, reliefHeight, targetSize, threshold, mirror, color | 🔲 Não implementado ainda |
+| `keychain.json` | `openscad` | text, fontSize, depth, padding, thickness, color | 🔲 Não implementado ainda |
 
 ### Páginas e Componentes
 - **Home:** grid responsivo (1/2/3 col), modelos agrupados por categoria, cards com badge, ícone colorido, título e descrição
-- **ModelEditor:** placeholder com mensagem "em desenvolvimento" — **próximo alvo**
+- **ModelEditor:** funcional — formulário de parâmetros + upload de imagem + preview 3D + botão download STL
+- **ThreePreview:** Three.js com STLLoader, OrbitControls, câmera em `(0, 0, maxDim*2)`, MeshPhongMaterial com cor configurável
+- **ParameterForm:** renderiza inputs dinâmicos por tipo (number, select, color, image, boolean, string)
+  - **ImageField:** componente dedicado com validação de tipo (PNG, JPG, WEBP) e tamanho (max 5 MB)
 - **UI:** `Button` (variants: primary/secondary/ghost) + `Badge`
 - **ModelCard:** card clicável com badge de categoria
 
@@ -92,6 +98,13 @@ interface Model {
 - **Logo completa:** `/forja3d/logo.svg` — cubo + wordmark "Forja**3D**"
 - **Logo ícone:** `/forja3d/logo-icon.svg` — cubo standalone com faíscas e brilho
 - **Conceito:** cubo forjado — gradientes âmbar→laranja nas faces, faíscas 4-pontas, brilho de calor
+
+### OpenSCAD WASM Renderer (builder principal do cortador)
+- **`OpenScadGeometryBuilder`** em `src/infrastructure/openscad/OpenScadGeometryBuilder.ts`
+- Perfil CookieCad com 3 camadas: chanfro (taper) + lâmina reta + base/pega
+- Modo `cutter`: anel oco com transição de `tipWidth` para `bladeThickness` via 4 steps de chanfro
+- Modo `cutter-stamp`: cutter + stamp lado a lado com tolerância de encaixe
+- Conversão ASCII STL → Binary ArrayBuffer para compatibilidade com Three.js
 
 ### Ambiente de Desenvolvimento Automatizado
 - **`.nvmrc`** — pina Node 22 (mesma versão do CI); `nvm use` dentro do diretório usa automaticamente
@@ -108,6 +121,7 @@ interface Model {
 | `docs/ARCHITECTURE.md` | Diagrama de camadas, entidades, portas, adaptadores, ADRs |
 | `docs/SETUP.md` | Guia de instalação: Mac, Linux, Windows |
 | `docs/V2_ROADMAP.md` | Plano completo da V2: auth, créditos, Stripe, backend, S3 |
+| `docs/COOKIE_CUTTER_RESEARCH.md` | Pesquisa completa sobre o cortador: abordagens, o que funciona, o que quebra |
 | `docs/adr/0001-0004` | ADRs em português |
 | `docs/PLANO.md` | **Este arquivo** |
 
@@ -164,97 +178,86 @@ EOF
 
 ---
 
+### 6. OpenSCAD: `The given mesh is not closed!` com polígonos côncavos
+
+**Erro:** `ERROR: The given mesh is not closed! Unable to convert to CGAL_Nef_Polyhedron.`
+
+**Causa raiz:** O Moore-Neighbor tracer usa 8-conectividade (movimentos diagonais). Em polígonos muito côncavos (ex: coelho com pescoço estreito), os movimentos diagonais criam **auto-interseções** no polígono resultante. O OpenSCAD rejeita polígonos auto-intersectados no `linear_extrude + difference()`.
+
+**O que NÃO funciona:**
+- Chaikin smoothing: agrava as auto-interseções em concavidades profundas
+- Canvas blur antes do threshold: altera a forma do polígono, pode criar pontes em features estreitas
+
+**Sintoma útil para diagnose:** No modo `cutter-stamp`, o stamp renderiza (usa `linear_extrude` direto, sem `difference()`) mas o cutter falha (usa `difference()`). Se stamp aparece e cutter não → polígono provavelmente auto-intersectado.
+
+**Solução correta (a implementar):** Trocar Moore-Neighbor 8-conectividade por 4-conectividade. Ou usar Potrace (curvas Bezier, zero diagonal moves). Ver `docs/COOKIE_CUTTER_RESEARCH.md` seção 10.5.
+
+---
+
 ## Próximos Passos (por prioridade)
 
-### 🔴 P1 — ModelEditor (principal feature da V1)
+### 🔴 P0 — BLOQUEANTE: Cortador de biscoito não funciona corretamente
 
-**✅ CONCLUÍDO: ParameterForm com tipos dinâmicos**
-- Suportados: number (slider), color picker, boolean (toggle), select, string, **image**
-- ImageField com validação: PNG, JPG, WEBP; máx. 5 MB
-- Integrado em ModelEditor com formulário responsivo
-- Build: OK | Lint: OK | TypeScript strict: OK
-- **Branch:** `feature/parameter-form-image-field` → await PR review & merge to develop
+**Situação atual (2026-04-15):** O feature principal do produto — gerar um cortador de biscoito a partir de imagem — **não está funcionando como deveria.** O estado atual:
 
-**⏳ PRÓXIMAS PARTES (ordem recomendada):**
+| Modo | Comportamento | Status |
+|------|--------------|--------|
+| Cortador | Dá "Erro inesperado" com imagens de formas côncavas (ex: coelho) | ❌ Quebrado |
+| Cortador + Carimbo | Renderiza os dois objetos juntos; qualidade visual abaixo do esperado | ⚠️ Parcial |
 
-1. **ThreePreview** com geometria estática
-   - Canvas Three.js com OrbitControls
-   - Recebe BufferGeometry + color, atualiza ao vivo
+**Causa raiz confirmada:** O `CanvasImageTracer` usa Moore-Neighbor com 8-conectividade (inclui movimentos diagonais). Para polígonos côncavos complexos, os movimentos diagonais produzem **auto-interseções** no polígono traçado. O OpenSCAD rejeita esses polígonos em `linear_extrude + difference()` com `ERROR: The given mesh is not closed!`.
 
-2. **ThreeGeometryBuilder** + **ThreeStlExporter**
-   - SVG path → BufferGeometry (ExtrudeGeometry)
-   - BufferGeometry → ArrayBuffer (.stl binário)
+**O que já foi tentado e NÃO resolve:**
+- Chaikin smoothing — agrava as auto-interseções
+- Canvas blur preprocessing — muda a forma, pode criar pontes em features estreitas
+- RDP com epsilon diferente — não elimina o problema estrutural das diagonais
 
-3. **CanvasImageTracer**
-   - Imagem → SVG path (marching-squares + RDP)
+**Referência visual esperada:** https://app.cookiecad.com — cortador com parede fina, chanfro na ponta, base larga. O nosso `OpenScadGeometryBuilder.ts` já gera o SCAD correto; o problema é o polígono de entrada.
 
-4. **OpenScadWasmRenderer** (para texto: keychain)
-   - Template + params → STL ArrayBuffer
+**Soluções a tentar (por ordem de facilidade):**
 
-5. **Botão Download STL**
-   - Já estruturado, falta geometria gerada
+1. **4-conectividade no Moore-Neighbor** _(menor esforço)_
+   - Mudar `CW8` para 4 direções (N/S/E/W, sem diagonais)
+   - Garante polígonos simples por construção; resultado mais "dente de serra" mas sem auto-interseções
+   - Arquivo: `src/infrastructure/tracer/CanvasImageTracer.ts`
 
----
+2. **Potrace** _(médio esforço, melhor resultado)_
+   - Já instalado: `npm ls potrace` → v2.1.8
+   - Produz curvas Bezier suaves sem diagonais
+   - Requer: converter saída SVG do potrace (com `C`/`Q` Bezier) em polyline antes de passar ao OpenSCAD
+   - Necessário: parsear `d="M x,y C ..."` e amostrar as curvas em pontos
 
-**ARQUITETURA (referência para implementação das próximas partes):**
-
-#### Portas (interfaces) — `src/application/ports/`
-```
-IImageTracer.ts         → traceja imagem → SVG path string
-IThreeGeometryBuilder.ts → SVG path → BufferGeometry extrudada
-IStlExporter.ts         → BufferGeometry → ArrayBuffer (.stl binário)
-IOpenScadRenderer.ts    → template + params → STL ArrayBuffer
-```
-
-#### Adaptadores — `src/infrastructure/`
-```
-CanvasImageTracer.ts    → Canvas API (marching-squares) → implementa IImageTracer
-ThreeGeometryBuilder.ts → THREE.ExtrudeGeometry → implementa IThreeGeometryBuilder
-ThreeStlExporter.ts     → THREE/examples STLExporter → implementa IStlExporter
-OpenScadWasmRenderer.ts → openscad-wasm-prebuilt → implementa IOpenScadRenderer
-```
-
-#### Casos de Uso — `src/application/use-cases/`
-```
-generateModel.ts   → recebe Model + params, roteia para openscad ou three-extrude
-traceImage.ts      → recebe File (imagem), retorna SVG path
-exportStl.ts       → recebe geometry, retorna Blob para download
-```
-
-#### Componentes de Apresentação
-```
-ParameterForm/     → ✅ PRONTO (tipos dinâmicos com ImageField)
-ThreePreview/      → ⏳ PRÓXIMO (canvas com OrbitControls)
-ModelEditor/       → ✅ ORQUESTRA (já integra form + preview + download)
-```
+3. **`manifold-3d`** _(maior esforço, mais robusto)_
+   - Engine do CookieCad: `npm install manifold-3d`
+   - API JavaScript direta para CSG + offset — não depende da qualidade do tracer
+   - Ver `docs/COOKIE_CUTTER_RESEARCH.md` seção 9.3
 
 ---
 
-### 🟡 P2 — Mais modelos
+### 🟡 P1 — Mais modelos
 
-Após o editor estar funcional, adicionar:
+Após cortador funcionar:
+- `stamp.json` — carimbo sozinho (sem cortador)
 - `sign.json` — placa com texto (OpenSCAD)
-- `letter.json` — letra grande decorativa (OpenSCAD ou SVG builtin)
-- Considerar modelo de teste simples (cubo/esfera) para validar o pipeline
+- `keychain.json` — chaveiro com texto (OpenSCAD — estrutura já existe)
 
 ---
 
-### 🟢 P3 — Roteamento por URL
+### 🟢 P2 — Roteamento por URL
 
-Atualmente a navegação usa `useState<Route>` em `App.tsx`.
-Para V1 completa (e pré-requisito da V2), migrar para React Router v7 ou TanStack Router:
+Atualmente a navegação usa `useState<Route>` em `App.tsx`. Migrar para React Router v7:
 - `/` → Home
 - `/editor/:slug` → ModelEditor
 - Habilita deep-link e botão voltar do navegador
 
 ---
 
-### 🔵 P4 — Polimentos visuais
+### 🔵 P3 — Polimentos
 
+- Web Worker para OpenSCAD WASM (não bloqueia UI durante geração)
 - Skeleton loading nos cards da Home
 - Toaster de notificação (download concluído, erro de geração)
 - Responsividade do ModelEditor em mobile
-- Animação de entrada nos cards
 
 ---
 
@@ -262,9 +265,9 @@ Para V1 completa (e pré-requisito da V2), migrar para React Router v7 ou TanSta
 
 | Decisão | Opções | Contexto |
 |---------|--------|----------|
+| Tracer | 4-conectividade vs Potrace vs manifold-3d | Ver P0 acima. 4-conectividade é o caminho mais rápido. |
 | Roteamento | React Router v7 vs TanStack Router | TanStack tem melhor TS mas é mais verboso |
-| Workers para WASM | Web Worker vs main thread | OpenSCAD WASM pode bloquear UI; Worker isola isso |
-| Potrace vs Canvas tracer | Potrace (melhor qualidade) vs Canvas API (zero dep) | Potrace requer port WASM; Canvas API é suficiente para V1 |
+| Workers para WASM | Web Worker vs main thread | OpenSCAD WASM bloqueia UI ~2-5s por geração |
 
 ---
 
@@ -297,7 +300,7 @@ Se você está retomando o trabalho e o chat foi perdido, siga estes passos:
    git push origin feature/minha-feature
    gh pr create --base develop --title "feat(scope): ..." --body "..."
    ```
-7. **Próximo foco:** implementar o `ModelEditor` (ver P1 acima)
+7. **Próximo foco:** corrigir o tracer do cortador de biscoito (ver **P0** acima) — é o único bloqueante para o produto funcionar
 
 ---
 
@@ -309,6 +312,12 @@ Se você está retomando o trabalho e o chat foi perdido, siga estes passos:
 | 2026-04-14 | Logo v2 (conceito forja: gradientes, faíscas, brilho), docs em PT, Husky+commitlint |
 | 2026-04-14 | Criação deste arquivo de plano |
 | 2026-04-14 | Ambiente automatizado: `.nvmrc`, `.editorconfig`, `.vscode/`, `.mcp.json` com `${GITHUB_TOKEN}`, SETUP.md reescrito |
+| 2026-04-14 | ModelEditor: formulário dinâmico, ParameterForm, upload de imagem, ThreePreview com OrbitControls |
+| 2026-04-14 | Pipeline completo: CanvasImageTracer (Moore-Neighbor + RDP) → ThreeGeometryBuilder (clipper + bvh-csg) → STL |
 | 2026-04-14 | Melhorias de geometria: bevel join (anti-spike), stamp deslocado, defaults intuitivos; revisão + merge develop→main |
-| 2026-04-15 | Deploy validado: GitHub Pages online (HTTP 200), build passa (5.06s), nenhuma funcionalidade quebrada. Pronto para P1 (ModelEditor). |
-| 2026-04-15 | ParameterForm: adicionado ImageField (PNG/JPG/WEBP, max 5MB, validação). Branch feature/parameter-form-image-field pronta para PR. |
+| 2026-04-14 | Migração para OpenSCAD WASM: `OpenScadGeometryBuilder.ts` com perfil CookieCad (3 camadas), modo cutter + stamp. Conversão ASCII→Binary STL. |
+| 2026-04-14 | Investigação de suavização do contorno: Chaikin (❌ causa auto-interseções → "mesh not closed"), Canvas blur (⚠️ altera forma do polígono). Revertido ao tracer original. Ver `docs/COOKIE_CUTTER_RESEARCH.md` seção 10. |
+| 2026-04-15 | Deploy validado: GitHub Pages online (HTTP 200), build passa, nenhuma funcionalidade quebrada. |
+| 2026-04-15 | ParameterForm: adicionado ImageField (PNG/JPG/WEBP, max 5MB, validação). Mergeado em develop. |
+| 2026-04-15 | Retomada: leitura de contexto completo, criação de memórias persistentes para sessões futuras. |
+| 2026-04-15 | Rebase de `feature/openscad-cookie-cutter` sobre `develop` atualizado. Conflito de PLANO.md resolvido manualmente. |

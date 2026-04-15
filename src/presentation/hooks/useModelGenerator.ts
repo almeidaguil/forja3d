@@ -1,7 +1,8 @@
 import { useCallback, useRef, useState } from 'react'
 import type { Model, ParameterValue } from '../../shared/types'
 import { CanvasImageTracer } from '../../infrastructure/tracer/CanvasImageTracer'
-import { ThreeGeometryBuilder } from '../../infrastructure/three/ThreeGeometryBuilder'
+import { OpenScadGeometryBuilder } from '../../infrastructure/openscad/OpenScadGeometryBuilder'
+import { HeightmapStampBuilder } from '../../infrastructure/three/HeightmapStampBuilder'
 import { generateModel } from '../../application/useCases/generateModel'
 import { exportStl } from '../../application/useCases/exportStl'
 
@@ -15,7 +16,8 @@ export interface UseModelGeneratorReturn {
 
 // Adapters are instantiated once per hook instance (stable references)
 const tracer = new CanvasImageTracer()
-const builder = new ThreeGeometryBuilder()
+const builder = new OpenScadGeometryBuilder()
+const heightmapBuilder = new HeightmapStampBuilder()
 
 async function fileToImageData(file: File): Promise<ImageData> {
   return new Promise((resolve, reject) => {
@@ -54,7 +56,7 @@ export function useModelGenerator(
       let imageData: ImageData | undefined
       if (imageFile) imageData = await fileToImageData(imageFile)
 
-      const result = await generateModel(model, values, imageData, { imageTracer: tracer, geometryBuilder: builder })
+      const result = await generateModel(model, values, imageData, { imageTracer: tracer, geometryBuilder: builder, heightmapBuilder })
 
       if (result.status === 'success' && result.geometry) {
         setStlBuffer(result.geometry)
