@@ -1,9 +1,10 @@
 import type { IImageTracer, TraceResult } from '../../application/ports/IImageTracer'
 
-// Clockwise 8-connectivity directions starting from East
-const CW8: [number, number][] = [
-  [1, 0], [1, 1], [0, 1], [-1, 1],
-  [-1, 0], [-1, -1], [0, -1], [1, -1],
+// 4-connectivity directions: E, S, W, N (clockwise, no diagonals)
+// Using only cardinal directions guarantees the traced polygon never has
+// diagonal moves, which eliminates self-intersections in concave shapes.
+const CW4: [number, number][] = [
+  [1, 0], [0, 1], [-1, 0], [0, -1],
 ]
 
 function toBinaryGrid(data: Uint8ClampedArray, w: number, h: number, threshold: number): Uint8Array {
@@ -19,7 +20,9 @@ function toBinaryGrid(data: Uint8ClampedArray, w: number, h: number, threshold: 
   return bin
 }
 
-// Moore-Neighbor boundary tracing (Jacob's stopping criterion simplified)
+// Moore-Neighbor boundary tracing with 4-connectivity (Jacob's stopping criterion simplified).
+// 4-connectivity (N/S/E/W only) produces axis-aligned steps — no diagonal edges —
+// so the resulting polygon is always simple (no self-intersections).
 function mooreTrace(bin: Uint8Array, w: number, h: number): [number, number][] {
   let sx = -1, sy = -1
   outerLoop: for (let y = 0; y < h; y++) {
@@ -31,19 +34,19 @@ function mooreTrace(bin: Uint8Array, w: number, h: number): [number, number][] {
 
   const result: [number, number][] = []
   let cx = sx, cy = sy
-  let back = 4 // started scanning from the left, so backtrack is West (index 4)
+  let back = 2 // first pixel found scanning left→right; last background was West (index 2)
 
   for (let iter = 0; iter < w * h; iter++) {
     result.push([cx, cy])
 
     let moved = false
-    for (let i = 1; i <= 8; i++) {
-      const d = (back + i) % 8
-      const nx = cx + CW8[d][0]
-      const ny = cy + CW8[d][1]
+    for (let i = 1; i <= 4; i++) {
+      const d = (back + i) % 4
+      const nx = cx + CW4[d][0]
+      const ny = cy + CW4[d][1]
       if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue
       if (bin[ny * w + nx]) {
-        back = (d + 4) % 8 // opposite of movement direction
+        back = (d + 2) % 4 // opposite of movement direction
         cx = nx
         cy = ny
         moved = true
