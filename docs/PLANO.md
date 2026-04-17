@@ -217,82 +217,108 @@ EOF
 
 ---
 
-### 🟡 P1 — Carimbo com detalhes reais
+### ✅ P1 — Carimbo com detalhes reais — CONCLUÍDO (2026-04-17)
 
-Branch: `feat/potrace-stamp`
+Branch: `feat/potrace-stamp` → mergeado em main
 
-**O quê:** Substituir o carimbo flat atual (só silhueta sólida) por um carimbo com relevo real dos detalhes da imagem.
-
-**Como:**
-- Usar **Potrace** (já instalado: `potrace v2.1.8`) para gerar multi-path SVG
-- Potrace produz: contorno externo + detalhes internos (olhos, nariz, bigodes) como sub-paths separados
-- Cada path extrudado em altura diferente: contorno = altura total, detalhes = relevo binário (~1.5mm)
-- `SvgStampBuilder.ts` já está implementado como base (versão anterior sem Potrace)
-- Afeta: modo **Carimbo** standalone e modo **Cortador + Carimbo**
-
-**Resultado esperado:** carimbo que quando pressionado em massa deixa os detalhes do design impressos.
+- PotraceStampBuilder: ImageData → Potrace multi-path → ExtrudeGeometry com holes
+- Base no formato da silhueta (não mais retângulo)
+- Parâmetros: threshold, turdSize, bezierSteps, mirror, reliefHeight
 
 ---
 
-### 🟡 P1b — Chaveiro com texto
+## Catálogo de Modelos V1 — Decisões da Equipe (2026-04-17)
 
-Branch: `feat/keychain`
+> Decisões tomadas com base em análise do mercado brasileiro (Mafagrafos, downloads reais) e MakerWorld.
 
-**O quê:** Implementar o modelo de chaveiro com texto personalizado via OpenSCAD.
+### Modelos já em produção (✅)
 
-**Como:**
-- Estrutura JSON já existe em `src/data/models/keychain.json`
-- Falta: template SCAD com `text()`, furo para argola, placa com cantos arredondados
-- Ver template de referência em `docs/agents/dev-makerworld.md` (seção Chaveiro)
-
----
-
-### 🟢 P2 — Roteamento por URL
-
-Branch: `feat/url-routing`
-
-**O quê:** Substituir `useState<Route>` em `App.tsx` por React Router v7.
-
-**Como:**
-- `/` → Home
-- `/editor/:slug` → ModelEditor (slug = `cookie-cutter`, `stamp`, `keychain`)
-- Habilita deep-link, botão voltar do browser, compartilhamento de URL
-
-**Decisão pendente:** React Router v7 vs TanStack Router (TanStack tem melhor TS, mas é mais verboso).
+| Modelo | Slug | Tecnologia | Status |
+|--------|------|-----------|--------|
+| Cortador de Biscoito | `cookie-cutter` | OpenSCAD WASM | ✅ Produção |
+| Carimbo | `stamp` | Potrace + Three.js | ✅ Produção |
 
 ---
 
-### 🔵 P3 — Performance: Web Worker para WASM
+### Sprint 1 — P1 (próximas branches)
 
-Branch: `feat/wasm-worker`
+#### Chaveiro com Texto
+- **Branch:** `feat/keychain-text`
+- **Referência:** Mafagrafos "Chaveiro Retangular com Nome" (56 downloads), "Chaveiro com Nome Completo" (77)
+- **Tecnologia:** OpenSCAD — `text()` + placa + furo de argola
+- **Parâmetros:** `text` (linha 1), `text2` (linha 2, opcional), `font_size`, `shape: retangular|oval|retangular_arredondado`, `thickness`, `padding`, `hole_diameter`, `add_nfc`
+- **NFC:** boolean — adiciona recesso ⌀26mm × 1.2mm no verso para tag NFC padrão (215/213)
+- **Dimensões padrão:** ~55×28×4mm, furo ⌀6mm, parede ao redor do furo ≥3mm
 
-**O quê:** Mover o OpenSCAD WASM para um Web Worker para não bloquear a UI (~3-5s de travamento durante geração).
-
-**Como:**
-- Criar `src/infrastructure/workers/geometry.worker.ts`
-- Adapter `OpenScadGeometryBuilder` passa a delegar ao Worker via `postMessage`
-- `useModelGenerator` continua usando `useTransition` — experiência do usuário fica fluida
-
----
-
-### 🔵 P3b — Polimentos de UX
-
-Branch: `feat/ux-polish`
-
-- Skeleton loading nos cards da Home (enquanto modelos carregam)
-- Toaster de notificação (download concluído, erro de geração)
-- Responsividade do ModelEditor em mobile (layout colapsável)
-- Mensagem de erro mais clara quando imagem é incompatível (fundo escuro, imagem muito pequena)
+#### Chaveiro com Imagem
+- **Branch:** `feat/keychain-image`
+- **Referência:** MakerWorld "Image to Keychain" (viral TikTok 2024), Mafagrafos "Imagem para 3D com Bordas" (87)
+- **Tecnologia:** CanvasImageTracer → OpenSCAD `polygon()` + `offset()` para borda + furo
+- **Parâmetros:** `image`, `size_mm`, `thickness`, `border_width`, `add_nfc`
+- **Diferencial:** silhueta do objeto vira o formato do chaveiro (não retângulo fixo)
 
 ---
 
-## Decisões Pendentes
+### Sprint 2 — P2
+
+#### Letreiro com Texto (2 camadas)
+- **Branch:** `feat/letreiro-2-camadas`
+- **Referência:** Mafagrafos "Letreiro Offset 2 Camadas" (185 downloads), "Letreiro 3 Camadas" (190)
+- **Tecnologia:** OpenSCAD — camada base (texto + offset) + camada frente (texto puro)
+- **Parâmetros:** `text`, `font`, `font_size`, `offset_distance`, `thickness_base`, `thickness_front`
+- **Saída:** 2 STLs separados (cor1 + cor2), download como arquivo único nomeado
+
+#### Plaquinha / Tag Personalizada
+- **Branch:** `feat/tag`
+- **Referência:** Mafagrafos "@Social - Retângulo 3 Cores" (162 downloads), pet tags, maçanetas
+- **Tecnologia:** OpenSCAD — retângulo/oval com texto, furo opcional
+- **Parâmetros:** `text`, `subtext`, `shape`, `size_mm`, `border_style`, `hole_diameter`, `add_nfc`
+
+---
+
+### Sprint 3 — P3 (polimentos + features técnicas)
+
+#### Roteamento por URL
+- **Branch:** `feat/url-routing`
+- React Router v7 — `/` → Home, `/editor/:slug` → ModelEditor
+- Decisão: React Router v7 (mais simples que TanStack para este escopo)
+
+#### Modo Cortador + Carimbo com Potrace
+- **Branch:** `fix/cutter-stamp-potrace`
+- Substituir stamp flat do OpenSCAD pelo PotraceStampBuilder
+- `GenerationResult` ganha `secondaryGeometry?: ArrayBuffer`
+- UI: dois botões de download ("Baixar Cortador" + "Baixar Carimbo")
+
+#### Web Worker para WASM
+- **Branch:** `feat/wasm-worker`
+- OpenSCAD WASM move para Worker → UI não trava durante geração (~3-5s)
+
+#### Polimentos de UX
+- **Branch:** `feat/ux-polish`
+- Skeleton loading, toaster, responsividade mobile, erros mais claros
+
+---
+
+### Fora do escopo V1 (decisão da equipe)
+
+| Item | Motivo |
+|------|--------|
+| Flexi articulado (axolotl, etc.) | Não parametrizável via web — geometria fixa |
+| @Social com ícones de rede | Requer banco de ícones — fora do escopo geométrico |
+| Litofane (translúcido) | Depende de filamento específico e luz — não controlável pelo app |
+| String Art | Nicho muito específico — P4 se houver demanda |
+| Cumbuca de imagem | Geometria 3D complexa — V2 |
+
+---
+
+## Decisões Técnicas Pendentes
 
 | Decisão | Opções | Status |
 |---------|--------|--------|
-| Roteamento | React Router v7 vs TanStack Router | Pendente — TanStack tem melhor TS, React Router é mais simples |
-| Workers para WASM | Web Worker vs main thread | Decidido: Web Worker (P3) |
-| Tracer longo prazo | Potrace permanente vs 4-conectividade atual | Potrace vem com feat/potrace-stamp |
+| Roteamento | React Router v7 vs TanStack | Decidido: **React Router v7** |
+| Workers para WASM | Web Worker vs main thread | Decidido: **Web Worker (P3)** |
+| NFC | Parâmetro em todos os chaveiros | Decidido: **boolean em modelos OpenSCAD de chaveiro** |
+| Cortador+Carimbo com Potrace | GenerationResult com 2 buffers | Decidido: **P3, branch separada** |
 
 ---
 
