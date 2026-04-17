@@ -31,6 +31,14 @@ export interface ExtrudeConfig {
   stampResolution?: number
   stampRelief?: number
   mirror?: boolean
+
+  // Potrace stamp fields
+  /** Luminance threshold for Potrace binarization (0–255). Default 128 */
+  threshold?: number
+  /** Suppress speckles smaller than this area in pixels². Default 4 */
+  turdSize?: number
+  /** Sampling steps per Bézier curve segment. Default 12 */
+  bezierSteps?: number
 }
 
 export interface IGeometryBuilder {
