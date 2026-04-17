@@ -2,10 +2,10 @@
   "id": "stamp",
   "slug": "stamp",
   "title": "Carimbo",
-  "description": "Transforme qualquer imagem em um carimbo 3D com relevo. Pixels escuros viram alto relevo; pixels claros/transparentes ficam rentes à base.",
+  "description": "Transforme qualquer imagem em um carimbo 3D com relevo real. Detalhes internos (olhos, contornos, texto) são preservados como relevos vetoriais via Potrace.",
   "category": "stamps",
   "renderStrategy": {
-    "type": "three-heightmap",
+    "type": "potrace-stamp",
     "svgSource": "image"
   },
   "creditsRequired": 1,
@@ -14,7 +14,7 @@
       "key": "baseHeight",
       "type": "number",
       "label": "Altura da base (mm)",
-      "default": 5,
+      "default": 4,
       "min": 2,
       "max": 15,
       "step": 0.5,
@@ -24,9 +24,9 @@
       "key": "reliefHeight",
       "type": "number",
       "label": "Altura do relevo (mm)",
-      "default": 3,
-      "min": 1,
-      "max": 8,
+      "default": 2,
+      "min": 0.5,
+      "max": 5,
       "step": 0.5,
       "unit": "mm"
     },
@@ -41,13 +41,31 @@
       "unit": "mm"
     },
     {
-      "key": "stampResolution",
+      "key": "threshold",
       "type": "number",
-      "label": "Resolução da malha",
-      "default": 80,
-      "min": 30,
-      "max": 200,
-      "step": 10
+      "label": "Sensibilidade (limiar)",
+      "default": 128,
+      "min": 10,
+      "max": 245,
+      "step": 5
+    },
+    {
+      "key": "turdSize",
+      "type": "number",
+      "label": "Suprimir manchas (px²)",
+      "default": 4,
+      "min": 0,
+      "max": 30,
+      "step": 1
+    },
+    {
+      "key": "bezierSteps",
+      "type": "number",
+      "label": "Qualidade das curvas",
+      "default": 12,
+      "min": 4,
+      "max": 24,
+      "step": 2
     },
     {
       "key": "mirror",

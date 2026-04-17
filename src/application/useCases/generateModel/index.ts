@@ -7,6 +7,7 @@ interface GenerateModelDeps {
   imageTracer: IImageTracer
   geometryBuilder: IGeometryBuilder
   heightmapBuilder?: IGeometryBuilder
+  potraceBuilder?: IGeometryBuilder
 }
 
 function extractDepth(values: Record<string, ParameterValue>): number {
@@ -77,6 +78,25 @@ export async function generateModel(
     const mirror = typeof values.mirror === 'boolean' ? values.mirror : true
 
     const geometry = await deps.heightmapBuilder.build({ pathData: '', targetSize, depth, stampRelief, stampResolution, mirror, imageData })
+    return { status: 'success', geometry }
+  }
+
+  if (renderStrategy.type === 'potrace-stamp') {
+    if (!imageData) return { status: 'error', error: 'Selecione uma imagem antes de gerar.' }
+    if (!deps.potraceBuilder) return { status: 'error', error: 'PotraceStampBuilder não disponível.' }
+
+    const targetSize   = typeof values.targetSize   === 'number'  ? values.targetSize   : 60
+    const depth        = typeof values.baseHeight   === 'number'  ? values.baseHeight   : 5
+    const stampRelief  = typeof values.reliefHeight === 'number'  ? values.reliefHeight : 2
+    const mirror       = typeof values.mirror       === 'boolean' ? values.mirror       : true
+    const threshold    = typeof values.threshold    === 'number'  ? values.threshold    : 128
+    const turdSize     = typeof values.turdSize     === 'number'  ? values.turdSize     : 4
+    const bezierSteps  = typeof values.bezierSteps  === 'number'  ? values.bezierSteps  : 12
+
+    const geometry = await deps.potraceBuilder.build({
+      pathData: '', imageData, targetSize, depth, stampRelief,
+      mirror, threshold, turdSize, bezierSteps,
+    })
     return { status: 'success', geometry }
   }
 

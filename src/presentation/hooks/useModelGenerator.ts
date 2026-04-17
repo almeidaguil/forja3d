@@ -3,6 +3,7 @@ import type { Model, ParameterValue } from '../../shared/types'
 import { CanvasImageTracer } from '../../infrastructure/tracer/CanvasImageTracer'
 import { OpenScadGeometryBuilder } from '../../infrastructure/openscad/OpenScadGeometryBuilder'
 import { HeightmapStampBuilder } from '../../infrastructure/three/HeightmapStampBuilder'
+import { PotraceStampBuilder } from '../../infrastructure/three/PotraceStampBuilder'
 import { generateModel } from '../../application/useCases/generateModel'
 import { exportStl } from '../../application/useCases/exportStl'
 
@@ -18,6 +19,7 @@ export interface UseModelGeneratorReturn {
 const tracer = new CanvasImageTracer()
 const builder = new OpenScadGeometryBuilder()
 const heightmapBuilder = new HeightmapStampBuilder()
+const potraceBuilder = new PotraceStampBuilder()
 
 async function fileToImageData(file: File): Promise<ImageData> {
   return new Promise((resolve, reject) => {
@@ -56,7 +58,7 @@ export function useModelGenerator(
       let imageData: ImageData | undefined
       if (imageFile) imageData = await fileToImageData(imageFile)
 
-      const result = await generateModel(model, values, imageData, { imageTracer: tracer, geometryBuilder: builder, heightmapBuilder })
+      const result = await generateModel(model, values, imageData, { imageTracer: tracer, geometryBuilder: builder, heightmapBuilder, potraceBuilder })
 
       if (result.status === 'success' && result.geometry) {
         setStlBuffer(result.geometry)
