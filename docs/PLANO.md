@@ -276,6 +276,19 @@ Branch: `feat/potrace-stamp` → mergeado em main
 
 ---
 
+### Sprint 2b — P2 (gerador de QR Code)
+
+#### QR Code 3D
+- **Branch:** `feat/qr-code`
+- **Referência:** MakerWorld "QR Code Sign & Keychain" (477k views), Elo7 placas Pix best-seller BR
+- **Tecnologia:** `qrcode` (npm, 34M downloads/semana) → matriz N×N → `QrCodeGeometryBuilder` (Three.js InstancedMesh)
+- **Pipeline:** `string → QRCode.create() → Uint8Array → BoxGeometry por módulo escuro → STL`
+- **Tipos suportados:** URL/link, Pix (payload EMV BR Code), Wi-Fi (MECARD), WhatsApp, texto livre, vCard
+- **Parâmetros:** `qr_type: url|pix|wifi|whatsapp|text|vcard`, `content`, `module_size_mm`, `base_height`, `module_height`, `border_modules`
+- **Diferencial BR:** Suporte a Pix nativo — sem equivalente gratuito client-side no mercado
+
+---
+
 ### Sprint 3 — P3 (polimentos + features técnicas)
 
 #### Roteamento por URL
