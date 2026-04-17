@@ -40,3 +40,6 @@ coverage/
 
 # Cache
 .eslintcache
+
+# Claude Code — local overrides (tokens, personal settings)
+.claude/settings.local.json
