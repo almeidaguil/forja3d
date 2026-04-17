@@ -8,6 +8,7 @@ interface GenerateModelDeps {
   geometryBuilder: IGeometryBuilder
   heightmapBuilder?: IGeometryBuilder
   potraceBuilder?: IGeometryBuilder
+  qrBuilder?: IGeometryBuilder
 }
 
 function extractDepth(values: Record<string, ParameterValue>): number {
@@ -98,6 +99,43 @@ export async function generateModel(
       mirror, threshold, turdSize, bezierSteps,
     })
     return { status: 'success', geometry }
+  }
+
+  if (renderStrategy.type === 'three-qr') {
+    if (!deps.qrBuilder) return { status: 'error', error: 'QrCodeGeometryBuilder não disponível.' }
+    if (!values.qrContent) return { status: 'error', error: 'Informe a chave Pix ou conteúdo do QR.' }
+
+    const targetSize    = typeof values.targetSize    === 'number' ? values.targetSize    : 50
+    const depth         = typeof values.depth         === 'number' ? values.depth         : 3
+    const stampRelief   = typeof values.stampRelief   === 'number' ? values.stampRelief   : 1.5
+    const qrType        = typeof values.qrType        === 'string' ? values.qrType        : 'pix'
+    const qrContent     = typeof values.qrContent     === 'string' ? values.qrContent     : ''
+    const qrPixKeyType  = typeof values.qrPixKeyType  === 'string' ? values.qrPixKeyType  : 'email'
+    const qrValue       = typeof values.qrValue       === 'number' && values.qrValue > 0 ? values.qrValue : undefined
+    const qrIdentifier  = typeof values.qrIdentifier  === 'string' && values.qrIdentifier ? values.qrIdentifier : undefined
+    const qrDescription = typeof values.qrDescription === 'string' && values.qrDescription ? values.qrDescription : undefined
+
+    const qrShowBase = typeof values.qrShowBase === 'boolean' ? values.qrShowBase : true
+
+    const geometry = await deps.qrBuilder.build({
+      pathData: '', targetSize, depth, stampRelief,
+      qrType, qrContent, qrPixKeyType, qrValue, qrIdentifier, qrDescription, qrShowBase,
+    })
+
+    // Also generate SVG and PNG for digital download
+    const QRCode = await import('qrcode')
+    const { buildPixPayload } = await import('../../../infrastructure/qr/PixPayloadBuilder')
+    const content = qrType === 'pix'
+      ? buildPixPayload({ key: qrContent, keyType: qrPixKeyType as import('../../../infrastructure/qr/PixPayloadBuilder').PixKeyType, value: qrValue, identifier: qrIdentifier, description: qrDescription })
+      : qrContent
+
+    const svgString  = await QRCode.toString(content, { type: 'svg', margin: 2 })
+    const pngDataUrl = await QRCode.toDataURL(content, { margin: 2, width: 512 })
+
+    // pixCopiaCola allows the user to paste the payload in their bank app to test before printing
+    const pixCopiaCola = qrType === 'pix' ? content : undefined
+
+    return { status: 'success', geometry, svgString, pngDataUrl, pixCopiaCola }
   }
 
   return { status: 'error', error: `Estratégia "${renderStrategy.type}" ainda não implementada.` }

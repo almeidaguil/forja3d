@@ -7,6 +7,7 @@ export type RenderStrategy =
   | { type: 'three-extrude'; svgSource: 'image' | 'builtin'; builtinShape?: BuiltinShape }
   | { type: 'three-heightmap'; svgSource: 'image' }
   | { type: 'potrace-stamp'; svgSource: 'image' }
+  | { type: 'three-qr' }
 
 export type BuiltinShape = 'circle' | 'square' | 'hexagon' | 'star'
 
@@ -43,6 +44,9 @@ export interface Model {
 
 export interface GenerationResult {
   status: 'success' | 'error'
-  geometry?: ArrayBuffer
+  geometry?: ArrayBuffer   // STL binary (3D print)
+  svgString?: string       // SVG vector (QR Code, laser engraving)
+  pngDataUrl?: string      // PNG image (QR Code, paper print)
+  pixCopiaCola?: string    // Pix payload string for bank app testing
   error?: string
 }

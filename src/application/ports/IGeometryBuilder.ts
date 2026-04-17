@@ -39,6 +39,15 @@ export interface ExtrudeConfig {
   turdSize?: number
   /** Sampling steps per Bézier curve segment. Default 12 */
   bezierSteps?: number
+
+  // QR Code fields
+  qrType?: string          // 'pix' | 'wifi' | 'whatsapp' | 'url' | 'text'
+  qrShowBase?: boolean     // false = only raised modules (no base plate)
+  qrContent?: string       // the main content (key, URL, text, etc.)
+  qrPixKeyType?: string    // 'cpf' | 'cnpj' | 'email' | 'phone' | 'random'
+  qrValue?: number         // optional Pix amount
+  qrIdentifier?: string    // optional txid/label
+  qrDescription?: string   // optional description
 }
 
 export interface IGeometryBuilder {

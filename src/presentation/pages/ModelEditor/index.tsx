@@ -86,12 +86,16 @@ interface FormPanelProps {
   onImageChange: (file: File | null) => void
   onGenerate: () => void
   onDownload: () => void
+  onDownloadSvg?: () => void
+  onDownloadPng?: () => void
+  pixCopiaCola?: string
 }
 
 function FormPanel({
   model, values, imageFile, needsImage,
   isLoading, canGenerate, errorMsg, stlReady,
   onValueChange, onImageChange, onGenerate, onDownload,
+  onDownloadSvg, onDownloadPng, pixCopiaCola,
 }: FormPanelProps): JSX.Element {
   return (
     <div className="space-y-6 rounded-xl border border-zinc-800 bg-zinc-900 p-6">
@@ -115,8 +119,40 @@ function FormPanel({
 
       {stlReady && (
         <Button className="w-full" variant="secondary" onClick={onDownload}>
-          Baixar STL
+          Baixar STL (3D)
         </Button>
+      )}
+      {onDownloadSvg && (
+        <Button className="w-full" variant="secondary" onClick={onDownloadSvg}>
+          Baixar SVG (vetor)
+        </Button>
+      )}
+      {onDownloadPng && (
+        <Button className="w-full" variant="secondary" onClick={onDownloadPng}>
+          Baixar PNG (imagem)
+        </Button>
+      )}
+      {pixCopiaCola && (
+        <div className="rounded-lg border border-amber-700/40 bg-amber-900/20 p-3 space-y-2">
+          <p className="text-xs font-semibold text-amber-400">
+            ⚠️ Teste antes de imprimir — copie e cole no app do banco:
+          </p>
+          <div
+            className="break-all text-xs text-zinc-300 bg-zinc-800 rounded p-2 cursor-pointer select-all"
+            title="Clique para selecionar"
+            onClick={e => {
+              const el = e.currentTarget
+              const range = document.createRange()
+              range.selectNodeContents(el)
+              window.getSelection()?.removeAllRanges()
+              window.getSelection()?.addRange(range)
+              navigator.clipboard?.writeText(pixCopiaCola)
+            }}
+          >
+            {pixCopiaCola}
+          </div>
+          <p className="text-xs text-zinc-500">Clique no texto para copiar</p>
+        </div>
       )}
     </div>
   )
@@ -125,7 +161,7 @@ function FormPanel({
 export function ModelEditor({ slug, onBack }: ModelEditorProps): JSX.Element {
   const model = getModelBySlug(slug)
   const { values, imageFile, setValue, setImageFile } = useParameterForm(model?.parameters ?? [])
-  const { stlBuffer, isLoading, error, generate, download } = useModelGenerator(model, values, imageFile)
+  const { stlBuffer, svgString, pngDataUrl, pixCopiaCola, isLoading, error, generate, download, downloadSvg, downloadPng } = useModelGenerator(model, values, imageFile)
 
   const needsImage =
     (model?.renderStrategy.type === 'three-extrude' ||
@@ -168,6 +204,9 @@ export function ModelEditor({ slug, onBack }: ModelEditorProps): JSX.Element {
           onImageChange={setImageFile}
           onGenerate={generate}
           onDownload={download}
+          onDownloadSvg={svgString ? downloadSvg : undefined}
+          onDownloadPng={pngDataUrl ? downloadPng : undefined}
+          pixCopiaCola={pixCopiaCola ?? undefined}
         />
         <ThreePreview stlBuffer={stlBuffer} color={previewColor} />
       </div>
