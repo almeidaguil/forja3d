@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from 'react'
 import type { Model, ParameterValue } from '../../shared/types'
 import { CanvasImageTracer } from '../../infrastructure/tracer/CanvasImageTracer'
 import { OpenScadGeometryBuilder } from '../../infrastructure/openscad/OpenScadGeometryBuilder'
-import { HeightmapStampBuilder } from '../../infrastructure/three/HeightmapStampBuilder'
+import { FlatStampBuilder } from '../../infrastructure/three/FlatStampBuilder'
 import { generateModel } from '../../application/useCases/generateModel'
 import { exportStl } from '../../application/useCases/exportStl'
 
@@ -17,7 +17,7 @@ export interface UseModelGeneratorReturn {
 // Adapters are instantiated once per hook instance (stable references)
 const tracer = new CanvasImageTracer()
 const builder = new OpenScadGeometryBuilder()
-const heightmapBuilder = new HeightmapStampBuilder()
+const heightmapBuilder = new FlatStampBuilder()
 
 async function fileToImageData(file: File): Promise<ImageData> {
   return new Promise((resolve, reject) => {
