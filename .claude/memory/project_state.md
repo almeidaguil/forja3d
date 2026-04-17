@@ -4,35 +4,35 @@ description: O que está funcionando, o que está pendente, e próxima prioridad
 type: project
 originSessionId: 7c100e83-ac8d-4d06-9628-c081741764ed
 ---
-**Estado em 2026-04-17** — branch ativa: `develop` (em sincronia com `main`)
+**Estado em 2026-04-17** — branch ativa: `main` (em sincronia com `develop`)
 
-**P0 RESOLVIDO:** Cortador de biscoito funciona para qualquer forma, incluindo côncavas complexas (coelho, estrela, etc.).
+**Em produção:**
+- ✅ Cortador de biscoito (OpenSCAD, perfil CookieCad, parede para fora)
+- ✅ Carimbo com detalhes reais (Potrace multi-path, base no formato da silhueta)
+- ✅ CI em PRs, Deploy automático no GitHub Pages
 
-**Implementado e funcionando:**
-- Infraestrutura completa (React 19 + Vite + Tailwind v4 + Husky + CI)
-- Home com grid de 3 modelos (cookie-cutter, stamp, keychain)
-- ModelEditor: form + preview 3D + download STL
-- `OpenScadGeometryBuilder` — cortador com perfil CookieCad, parede para FORA da silhueta
-- Flood-fill (`fillEnclosedRegions`) em `src/application/services/imageProcessing.ts`
-- 4-conectividade no tracer, winding CCW, opening morfológico 0.5mm
-- Fix Vite WASM: plugin `openscadWasmStable` em `vite.config.ts`
-- CI em PRs: `.github/workflows/ci.yml`
-- Equipe de agentes: Dev Geometry, Dev Frontend, Dev MakerWorld, Arquiteto, Revisor, Documentador
-- Memórias Claude versionadas em `.claude/memory/` no repo
+**Catálogo completo V1 — decidido pela equipe (2026-04-17):**
 
-**Próxima prioridade — P1:**
-Branch `feat/potrace-stamp`:
-- Usar Potrace (v2.1.8 já instalado) para gerar carimbo com detalhes reais
-- Potrace produz multi-path: contorno externo + detalhes internos (olhos, nariz)
-- Cada path extrudado em altura diferente (binário, não heightmap)
-- Isso também corrige o modo "Cortador + Carimbo" para ter carimbo com detalhes
+Sprint 1 (P1 — próximas branches):
+1. `feat/keychain-text` — Chaveiro com texto (OpenSCAD, 2 linhas, NFC boolean)
+2. `feat/keychain-image` — Chaveiro com imagem (silhueta vira formato do chaveiro)
 
-**Pendente (P2+):**
-- `keychain.json` — chaveiro com texto (OpenSCAD, estrutura JSON existe)
-- Roteamento por URL (React Router v7)
-- Web Worker para WASM (não bloquear UI)
-- Responsividade mobile do ModelEditor
+Sprint 2 (P2):
+3. `feat/letreiro-2-camadas` — Letreiro com offset 2 camadas (190 downloads Mafagrafos)
+4. `feat/tag` — Plaquinha/Tag (@social, pet tag, maçaneta)
 
-**Why:** O cortador foi o bloqueante central do produto. Agora com P0 resolvido, o foco é nos outros modelos (carimbo + chaveiro) para completar a V1.
+Sprint 3 (P3):
+5. `feat/url-routing` — React Router v7
+6. `fix/cutter-stamp-potrace` — Cortador + Carimbo com Potrace (2 STLs)
+7. `feat/wasm-worker` — Web Worker para OpenSCAD
+8. `feat/ux-polish` — Skeleton, toaster, mobile
 
-**How to apply:** Ao retomar o trabalho, começar lendo `docs/PLANO.md`, verificar git log, e seguir o fluxo: branch → PR → develop → main.
+**Fora do escopo V1:** flexi animals, @social com ícones, litofane, string art, cumbuca
+
+**NFC:** boolean `addNfc` em todos os chaveiros OpenSCAD → recesso ⌀26mm × 1.2mm no verso
+
+**Próxima branch:** `feat/keychain-text`
+
+**Why:** Catálogo definido com base em análise de mercado (Mafagrafos + MakerWorld). O chaveiro de texto tem menor custo de implementação (OpenSCAD puro) e demanda imediata comprovada.
+
+**How to apply:** Seguir o catálogo da ordem definida. NFC é parâmetro boolean. Letreiro e Tag são variações de texto — máximo reuso do OpenSCAD template.
