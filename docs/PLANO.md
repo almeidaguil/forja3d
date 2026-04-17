@@ -221,39 +221,78 @@ EOF
 
 Branch: `feat/potrace-stamp`
 
-- Usar **Potrace** (já instalado: `potrace v2.1.8`) para gerar carimbo com detalhes internos
-- Potrace produz multi-path SVG: contorno externo + detalhes internos (olhos, nariz, bigodes)
-- Cada path extrudado em altura diferente: contorno = altura total, detalhes = relevo binário
-- Resolve também o modo "Cortador + Carimbo" para ter carimbo com detalhes reais
-- `keychain.json` — chaveiro com texto (estrutura JSON já existe, falta o template SCAD)
+**O quê:** Substituir o carimbo flat atual (só silhueta sólida) por um carimbo com relevo real dos detalhes da imagem.
+
+**Como:**
+- Usar **Potrace** (já instalado: `potrace v2.1.8`) para gerar multi-path SVG
+- Potrace produz: contorno externo + detalhes internos (olhos, nariz, bigodes) como sub-paths separados
+- Cada path extrudado em altura diferente: contorno = altura total, detalhes = relevo binário (~1.5mm)
+- `SvgStampBuilder.ts` já está implementado como base (versão anterior sem Potrace)
+- Afeta: modo **Carimbo** standalone e modo **Cortador + Carimbo**
+
+**Resultado esperado:** carimbo que quando pressionado em massa deixa os detalhes do design impressos.
+
+---
+
+### 🟡 P1b — Chaveiro com texto
+
+Branch: `feat/keychain`
+
+**O quê:** Implementar o modelo de chaveiro com texto personalizado via OpenSCAD.
+
+**Como:**
+- Estrutura JSON já existe em `src/data/models/keychain.json`
+- Falta: template SCAD com `text()`, furo para argola, placa com cantos arredondados
+- Ver template de referência em `docs/agents/dev-makerworld.md` (seção Chaveiro)
 
 ---
 
 ### 🟢 P2 — Roteamento por URL
 
-Atualmente a navegação usa `useState<Route>` em `App.tsx`. Migrar para React Router v7:
+Branch: `feat/url-routing`
+
+**O quê:** Substituir `useState<Route>` em `App.tsx` por React Router v7.
+
+**Como:**
 - `/` → Home
-- `/editor/:slug` → ModelEditor
-- Habilita deep-link e botão voltar do navegador
+- `/editor/:slug` → ModelEditor (slug = `cookie-cutter`, `stamp`, `keychain`)
+- Habilita deep-link, botão voltar do browser, compartilhamento de URL
+
+**Decisão pendente:** React Router v7 vs TanStack Router (TanStack tem melhor TS, mas é mais verboso).
 
 ---
 
-### 🔵 P3 — Polimentos
+### 🔵 P3 — Performance: Web Worker para WASM
 
-- Web Worker para OpenSCAD WASM (não bloqueia UI durante geração)
-- Skeleton loading nos cards da Home
+Branch: `feat/wasm-worker`
+
+**O quê:** Mover o OpenSCAD WASM para um Web Worker para não bloquear a UI (~3-5s de travamento durante geração).
+
+**Como:**
+- Criar `src/infrastructure/workers/geometry.worker.ts`
+- Adapter `OpenScadGeometryBuilder` passa a delegar ao Worker via `postMessage`
+- `useModelGenerator` continua usando `useTransition` — experiência do usuário fica fluida
+
+---
+
+### 🔵 P3b — Polimentos de UX
+
+Branch: `feat/ux-polish`
+
+- Skeleton loading nos cards da Home (enquanto modelos carregam)
 - Toaster de notificação (download concluído, erro de geração)
-- Responsividade do ModelEditor em mobile
+- Responsividade do ModelEditor em mobile (layout colapsável)
+- Mensagem de erro mais clara quando imagem é incompatível (fundo escuro, imagem muito pequena)
 
 ---
 
 ## Decisões Pendentes
 
-| Decisão | Opções | Contexto |
-|---------|--------|----------|
-| Tracer | 4-conectividade vs Potrace vs manifold-3d | Ver P0 acima. 4-conectividade é o caminho mais rápido. |
-| Roteamento | React Router v7 vs TanStack Router | TanStack tem melhor TS mas é mais verboso |
-| Workers para WASM | Web Worker vs main thread | OpenSCAD WASM bloqueia UI ~2-5s por geração |
+| Decisão | Opções | Status |
+|---------|--------|--------|
+| Roteamento | React Router v7 vs TanStack Router | Pendente — TanStack tem melhor TS, React Router é mais simples |
+| Workers para WASM | Web Worker vs main thread | Decidido: Web Worker (P3) |
+| Tracer longo prazo | Potrace permanente vs 4-conectividade atual | Potrace vem com feat/potrace-stamp |
 
 ---
 
