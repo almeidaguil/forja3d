@@ -6,6 +6,7 @@ export type RenderStrategy =
   | { type: 'openscad'; scadTemplate: string }
   | { type: 'three-extrude'; svgSource: 'image' | 'builtin'; builtinShape?: BuiltinShape }
   | { type: 'three-heightmap'; svgSource: 'image' }
+  | { type: 'potrace-stamp'; svgSource: 'image' }
 
 export type BuiltinShape = 'circle' | 'square' | 'hexagon' | 'star'
 
