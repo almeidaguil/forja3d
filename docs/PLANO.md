@@ -22,13 +22,17 @@
 | Export STL | ✅ Completo |
 | Offset de polígono (bevel join) | ✅ Completo |
 | OpenSCAD WASM renderer | ✅ Implementado (builder principal) |
-| Canvas image tracer | ⚠️ Funcional, qualidade de contorno a melhorar |
-| Cortador de biscoito — modo Cortador | ⚠️ Geometria ok em polígonos simples; instável em polígonos muito côncavos |
-| Cortador de biscoito — modo Cortador+Carimbo | ⚠️ Renderiza os dois objetos; visual precisa refinamento |
+| Canvas image tracer | ✅ 4-conectividade + flood-fill + winding CCW |
+| Cortador de biscoito — modo Cortador | ✅ Funcional para qualquer forma (coelho, formas côncavas) |
+| Cortador de biscoito — modo Cortador+Carimbo | ⚠️ Gera os dois; carimbo só tem silhueta (sem detalhes internos) |
+| CI em PRs (build + lint) | ✅ Workflow ci.yml rodando em todos os PRs |
+| Fix WASM fetch (Vite) | ✅ Plugin middleware remove ?v= do openscad-wasm |
 | Roteamento por URL | 🔲 A implementar (V1 usa useState) |
 | Logo v2 (forja/faíscas) | ✅ Completo |
 | Documentação completa (PT) | ✅ Completo |
 | **ParameterForm com ImageField** | ✅ Completo (tipos dinâmicos) |
+| Memórias Claude versionadas no repo | ✅ `.claude/memory/` no repositório |
+| Equipe de agentes especializados | ✅ Arquiteto, Dev Geometry, Dev Frontend, Dev MakerWorld, Revisor, Documentador |
 
 **Site ao vivo:** https://almeidaguil.github.io/forja3d/
 
@@ -80,9 +84,9 @@ interface Model {
 ### Modelos criados (`src/data/models/`)
 | Arquivo | Estratégia | Parâmetros principais | Status |
 |---------|-----------|----------------------|--------|
-| `cookie-cutter.json` | `three-extrude / image` | cutterHeight, wallThickness, tipWidth, chamferHeight, baseWidth, baseHeight, targetSize, threshold, color | ⚠️ Ver P0 |
-| `stamp.json` | `three-extrude / image` | baseHeight, reliefHeight, targetSize, threshold, mirror, color | 🔲 Não implementado ainda |
-| `keychain.json` | `openscad` | text, fontSize, depth, padding, thickness, color | 🔲 Não implementado ainda |
+| `cookie-cutter.json` | `openscad` | cutterHeight, wallThickness, tipWidth, chamferHeight, baseWidth, baseHeight, targetSize, threshold, color | ✅ Funcionando |
+| `stamp.json` | `three-heightmap` | baseHeight, reliefHeight, targetSize, threshold, stampResolution, mirror, color | ⚠️ Gera; sem detalhes internos |
+| `keychain.json` | `openscad` | text, fontSize, depth, padding, thickness, color | 🔲 Template SCAD pendente |
 
 ### Páginas e Componentes
 - **Home:** grid responsivo (1/2/3 col), modelos agrupados por categoria, cards com badge, ícone colorido, título e descrição
@@ -196,50 +200,32 @@ EOF
 
 ## Próximos Passos (por prioridade)
 
-### 🔴 P0 — BLOQUEANTE: Cortador de biscoito não funciona corretamente
+### ✅ P0 — RESOLVIDO: Cortador de biscoito funcionando (2026-04-17)
 
-**Situação atual (2026-04-15):** O feature principal do produto — gerar um cortador de biscoito a partir de imagem — **não está funcionando como deveria.** O estado atual:
+| Problema | Causa raiz | Solução |
+|----------|------------|---------|
+| "mesh not closed" côncavos | 8-conectividade + protrusions finas + winding CW + ponto duplicado | 4-conectividade + flood-fill + opening morfológico + winding CCW |
+| "Failed to fetch" WASM após build | Vite adicionava `?v=hash` ao openscad-wasm | Plugin middleware `openscadWasmStable` em `vite.config.ts` |
+| Parede do cortador para dentro | `outer=silhueta, inner=silhueta-wall` (invertido) | `inner=silhueta (cookie exato), outer=silhueta+wall` |
 
-| Modo | Comportamento | Status |
-|------|--------------|--------|
-| Cortador | Dá "Erro inesperado" com imagens de formas côncavas (ex: coelho) | ❌ Quebrado |
-| Cortador + Carimbo | Renderiza os dois objetos juntos; qualidade visual abaixo do esperado | ⚠️ Parcial |
-
-**Causa raiz confirmada:** O `CanvasImageTracer` usa Moore-Neighbor com 8-conectividade (inclui movimentos diagonais). Para polígonos côncavos complexos, os movimentos diagonais produzem **auto-interseções** no polígono traçado. O OpenSCAD rejeita esses polígonos em `linear_extrude + difference()` com `ERROR: The given mesh is not closed!`.
-
-**O que já foi tentado e NÃO resolve:**
-- Chaikin smoothing — agrava as auto-interseções
-- Canvas blur preprocessing — muda a forma, pode criar pontes em features estreitas
-- RDP com epsilon diferente — não elimina o problema estrutural das diagonais
-
-**Referência visual esperada:** https://app.cookiecad.com — cortador com parede fina, chanfro na ponta, base larga. O nosso `OpenScadGeometryBuilder.ts` já gera o SCAD correto; o problema é o polígono de entrada.
-
-**Soluções a tentar (por ordem de facilidade):**
-
-1. **4-conectividade no Moore-Neighbor** _(menor esforço)_
-   - Mudar `CW8` para 4 direções (N/S/E/W, sem diagonais)
-   - Garante polígonos simples por construção; resultado mais "dente de serra" mas sem auto-interseções
-   - Arquivo: `src/infrastructure/tracer/CanvasImageTracer.ts`
-
-2. **Potrace** _(médio esforço, melhor resultado)_
-   - Já instalado: `npm ls potrace` → v2.1.8
-   - Produz curvas Bezier suaves sem diagonais
-   - Requer: converter saída SVG do potrace (com `C`/`Q` Bezier) em polyline antes de passar ao OpenSCAD
-   - Necessário: parsear `d="M x,y C ..."` e amostrar as curvas em pontos
-
-3. **`manifold-3d`** _(maior esforço, mais robusto)_
-   - Engine do CookieCad: `npm install manifold-3d`
-   - API JavaScript direta para CSG + offset — não depende da qualidade do tracer
-   - Ver `docs/COOKIE_CUTTER_RESEARCH.md` seção 9.3
+**Arquivos-chave:**
+- `src/infrastructure/openscad/OpenScadGeometryBuilder.ts` — opening morfológico, winding, direção da parede
+- `src/application/services/imageProcessing.ts` — `fillEnclosedRegions` (flood-fill)
+- `src/infrastructure/tracer/CanvasImageTracer.ts` — 4-conectividade
+- `vite.config.ts` — plugin WASM stable
+- `.github/workflows/ci.yml` — CI em PRs
 
 ---
 
-### 🟡 P1 — Mais modelos
+### 🟡 P1 — Carimbo com detalhes reais
 
-Após cortador funcionar:
-- `stamp.json` — carimbo sozinho (sem cortador)
-- `sign.json` — placa com texto (OpenSCAD)
-- `keychain.json` — chaveiro com texto (OpenSCAD — estrutura já existe)
+Branch: `feat/potrace-stamp`
+
+- Usar **Potrace** (já instalado: `potrace v2.1.8`) para gerar carimbo com detalhes internos
+- Potrace produz multi-path SVG: contorno externo + detalhes internos (olhos, nariz, bigodes)
+- Cada path extrudado em altura diferente: contorno = altura total, detalhes = relevo binário
+- Resolve também o modo "Cortador + Carimbo" para ter carimbo com detalhes reais
+- `keychain.json` — chaveiro com texto (estrutura JSON já existe, falta o template SCAD)
 
 ---
 
@@ -300,7 +286,7 @@ Se você está retomando o trabalho e o chat foi perdido, siga estes passos:
    git push origin feature/minha-feature
    gh pr create --base develop --title "feat(scope): ..." --body "..."
    ```
-7. **Próximo foco:** corrigir o tracer do cortador de biscoito (ver **P0** acima) — é o único bloqueante para o produto funcionar
+7. **Próximo foco:** carimbo com detalhes reais via Potrace (`feat/potrace-stamp`) — ver P1 abaixo
 
 ---
 
@@ -321,3 +307,8 @@ Se você está retomando o trabalho e o chat foi perdido, siga estes passos:
 | 2026-04-15 | ParameterForm: adicionado ImageField (PNG/JPG/WEBP, max 5MB, validação). Mergeado em develop. |
 | 2026-04-15 | Retomada: leitura de contexto completo, criação de memórias persistentes para sessões futuras. |
 | 2026-04-15 | Rebase de `feature/openscad-cookie-cutter` sobre `develop` atualizado. Conflito de PLANO.md resolvido manualmente. |
+| 2026-04-17 | Expansão da equipe de agentes: Dev Geometry, Dev Frontend, Dev MakerWorld, /cad-3d slash command, CLAUDE.md, copilot-instructions.md |
+| 2026-04-17 | fix/openscad-wasm-fetch → develop → main: plugin Vite remove ?v= do openscad-wasm |
+| 2026-04-17 | fix/tracer-flood-fill → develop → main: P0 resolvido — flood-fill + opening morfológico + winding + parede para fora |
+| 2026-04-17 | ci.yml: CI Build & Lint em todos os PRs para develop/main |
+| 2026-04-17 | docs/memory: memórias Claude versionadas em .claude/memory/ para reuso por outras IAs |
