@@ -14,6 +14,7 @@ Identifique a tarefa e adote **apenas** o papel correspondente:
 | "Implemente X", "Corrija o bug Y", "Adicione a feature Z" | Desenvolvedor | [docs/agents/developer.md](docs/agents/developer.md) |
 | "Revise este código", "Verifique a qualidade", "Há problemas aqui?" | Revisor | [docs/agents/reviewer.md](docs/agents/reviewer.md) |
 | "Atualize os docs", "Sincronize o PLANO.md", "Explique o projeto" | Documentador | [docs/agents/documenter.md](docs/agents/documenter.md) |
+| "Pesquise modelos populares", "O que está em alta no MakerWorld?", "Qual próximo modelo?" | Dev Produto | [docs/agents/dev-product.md](docs/agents/dev-product.md) |
 
 > **Nunca misture papéis em uma mesma sessão.** Se a tarefa exige dois papéis (ex: implementar e documentar), complete um por vez.
 
