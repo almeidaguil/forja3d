@@ -1,6 +1,7 @@
 import type { Model, ParameterValue, GenerationResult } from '../../../shared/types'
 import type { IImageTracer } from '../../ports/IImageTracer'
 import type { GeometryMode, IGeometryBuilder } from '../../ports/IGeometryBuilder'
+import { fillEnclosedRegions } from '../../services/imageProcessing'
 
 interface GenerateModelDeps {
   imageTracer: IImageTracer
@@ -30,7 +31,8 @@ export async function generateModel(
       if (!imageData) return { status: 'error', error: 'Selecione uma imagem antes de gerar.' }
 
       const threshold = typeof values.threshold === 'number' ? values.threshold : 128
-      const traced = await deps.imageTracer.trace(imageData, threshold)
+      const filled = fillEnclosedRegions(imageData, threshold)
+      const traced = await deps.imageTracer.trace(filled, threshold)
 
       if (!traced.pathData) return { status: 'error', error: 'Não foi possível detectar um contorno na imagem.' }
 
