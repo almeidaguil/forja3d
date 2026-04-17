@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git rebase:*)",
+      "Bash(git stash:*)",
+      "Bash(git commit -m ':*)",
+      "Bash(npm run:*)",
+      "Bash(node /Users/guisalmeida/Documents/Pessoal/forja3d/scripts/test-tracer.mjs)",
+      "Bash(grep -r \"potrace\" /Users/guisalmeida/Documents/Pessoal/forja3d/node_modules/potrace --maxdepth 1 -l)",
+      "Bash(echo \"PID=$!\")",
+      "Bash(open \"http://localhost:5174/forja3d/\")",
+      "mcp__github__create_pull_request",
+      "Bash(gh run:*)",
+      "Bash(pkill -f \"vite\")",
+      "Bash(mkdir -p /Users/guisalmeida/Documents/Pessoal/forja3d/.claude/commands)",
+      "Bash(mv /Users/guisalmeida/Documents/Pessoal/forja3d/.claude/rules/cad-3d.md /Users/guisalmeida/Documents/Pessoal/forja3d/.claude/commands/cad-3d.md)",
+      "Bash(rmdir /Users/guisalmeida/Documents/Pessoal/forja3d/.claude/rules)",
+      "Bash(open \"http://localhost:5173/forja3d/\")",
+      "Bash(git commit -m ' *)"
+    ],
+    "additionalDirectories": [
+      "/Users/guisalmeida/Documents/Pessoal/forja3d/.claude"
+    ]
+  }
+}

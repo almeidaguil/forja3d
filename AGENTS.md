@@ -11,11 +11,19 @@ Identifique a tarefa e adote **apenas** o papel correspondente:
 | Tarefa recebida | Papel | Arquivo |
 |---|---|---|
 | "Decida como implementar X", "Crie a interface para Y", "Avalie a arquitetura" | Arquiteto | [docs/agents/architect.md](docs/agents/architect.md) |
-| "Implemente X", "Corrija o bug Y", "Adicione a feature Z" | Desenvolvedor | [docs/agents/developer.md](docs/agents/developer.md) |
+| "Implemente geometria", "Corrija tracer", "Novo modelo SCAD", "Algoritmo de polígono" | Dev Geometry | [docs/agents/dev-geometry.md](docs/agents/dev-geometry.md) |
+| "Implemente componente", "Corrija UI", "Novo hook", "Formulário", "Roteamento" | Dev Frontend | [docs/agents/dev-frontend.md](docs/agents/dev-frontend.md) |
+| "Publicar no MakerWorld", "Criar SCAD paramétrico", "Customizer", "Template OpenSCAD" | Dev MakerWorld | [docs/agents/dev-makerworld.md](docs/agents/dev-makerworld.md) |
 | "Revise este código", "Verifique a qualidade", "Há problemas aqui?" | Revisor | [docs/agents/reviewer.md](docs/agents/reviewer.md) |
 | "Atualize os docs", "Sincronize o PLANO.md", "Explique o projeto" | Documentador | [docs/agents/documenter.md](docs/agents/documenter.md) |
 
-> **Nunca misture papéis em uma mesma sessão.** Se a tarefa exige dois papéis (ex: implementar e documentar), complete um por vez.
+> **Nunca misture papéis em uma mesma sessão.** Se a tarefa toca Dev Geometry e Dev Frontend (ex: novo modelo que tem builder + hook + UI), execute na ordem: Geometry primeiro, Frontend depois.
+
+**Dúvida sobre qual Dev usar?**
+- Toca `src/infrastructure/` ou algoritmo matemático → **Dev Geometry**
+- Toca `src/presentation/` ou `src/application/useCases/` → **Dev Frontend**
+- Toca arquivo `.scad` standalone ou publicação no MakerWorld → **Dev MakerWorld**
+- Toca os dois (geometry + UI) → Geometry implementa o builder/adapter, Frontend implementa o hook/componente
 
 ---
 
@@ -88,6 +96,106 @@ O arquivo `.mcp.json` na raiz configura os servidores MCP. Após ativar (veja `d
 | `github` | Criar issues, consultar PRs, verificar releases do repo |
 | `sequential-thinking` | Raciocinar passo a passo sobre decisões complexas antes de agir |
 | `fetch` | Buscar documentação externa, specs de formato (STL, 3MF, SVG) |
+
+---
+
+## CAD/3D Expert Reference
+
+Use esta seção em qualquer tarefa que envolva geometria, tracer, OpenSCAD ou Three.js.
+
+### OpenSCAD — motor principal de STL
+```scad
+// Polígono 2D → sólido 3D
+linear_extrude(height = H) { polygon(points = pts); }
+
+// Parede oca — padrão central do Forja3D
+difference() {
+  polygon(points = pts);
+  offset(r = -espessura_parede) polygon(points = pts);
+}
+
+// Operações CSG
+union()        { a; b; }   // juntar
+difference()   { base; subtrair; }  // base menos subtrair (ORDEM IMPORTA)
+intersection() { a; b; }   // só sobreposição
+hull()         { a; b; }   // envoltória convexa
+```
+
+### Winding order (orientação do polígono)
+- OpenSCAD `polygon()`: **CCW = sólido**, CW = buraco
+- SVG/Canvas: Y cresce para baixo → após flip Y, verificar se ainda é CCW
+
+```typescript
+function signedArea(pts: [number, number][]): number {
+  return pts.reduce((sum, [x1, y1], i) => {
+    const [x2, y2] = pts[(i + 1) % pts.length]
+    return sum + (x1 * y2 - x2 * y1)
+  }, 0) / 2
+  // > 0 → CCW ✓   < 0 → CW (reverter array para corrigir)
+}
+```
+
+### Bug P0 — Moore-Neighbor 8-conectividade
+**Arquivo:** `src/infrastructure/tracer/CanvasImageTracer.ts`
+**Sintoma:** OpenSCAD retorna `mesh not closed` em formas côncavas.
+**Causa:** 8-conectividade traça diagonais → polígono auto-toca em vértice → SCAD rejeita.
+**Correções em ordem de complexidade:**
+1. **4-conectividade** — só N/E/S/W. Sem diagonais = sem auto-interseções.
+2. **Potrace** — `import Potrace from 'potrace'`. Gera curvas Bézier suaves, muito mais limpo.
+3. **Pós-processamento** — remover vértices duplicados após o trace.
+
+### Simplificação Douglas-Peucker
+```typescript
+type Pt = [number, number]
+function simplify(pts: Pt[], epsilon: number): Pt[] {
+  if (pts.length <= 2) return pts
+  const [x1, y1] = pts[0], [x2, y2] = pts.at(-1)!
+  const len = Math.hypot(x2 - x1, y2 - y1)
+  let maxDist = 0, maxIdx = 0
+  for (let i = 1; i < pts.length - 1; i++) {
+    const [px, py] = pts[i]
+    const d = len === 0 ? Math.hypot(px - x1, py - y1)
+      : Math.abs((y2 - y1) * px - (x2 - x1) * py + x2 * y1 - y2 * x1) / len
+    if (d > maxDist) { maxDist = d; maxIdx = i }
+  }
+  if (maxDist > epsilon)
+    return [...simplify(pts.slice(0, maxIdx + 1), epsilon).slice(0, -1),
+             ...simplify(pts.slice(maxIdx), epsilon)]
+  return [pts[0], pts.at(-1)!]
+}
+```
+
+### Formato STL binário (80 + 4 + 50×n bytes)
+```
+[80 bytes]  Header texto
+[4 bytes]   uint32 LE — nº de triângulos
+por triângulo:
+  [12 bytes] normal (3× float32 LE)
+  [12 bytes] vértice 1 (3× float32 LE)
+  [12 bytes] vértice 2 (3× float32 LE)
+  [12 bytes] vértice 3 (3× float32 LE)
+  [2 bytes]  attribute byte count (uint16 LE, geralmente 0)
+```
+
+### Fluxo de dados: imagem → STL
+```
+CanvasImageTracer.trace()    → path SVG: "M x y L x y … Z"
+OpenScadGeometryBuilder.build()
+  parseSimplePath()          → Pt[] em pixels
+  × (targetSizeMm / maxDimPx) → Pt[] em mm
+  center + flip Y            → coordenadas OpenSCAD
+  generateCutterScad()       → código SCAD
+  openscad.renderToStl()     → ASCII STL
+  asciiStlToArrayBuffer()    → ArrayBuffer binário
+```
+
+### Erros comuns → causas → correções
+| Erro | Causa | Correção |
+|---|---|---|
+| `mesh not closed` | Polígono auto-intersecta | 4-conectividade ou Potrace |
+| `Object may not be a valid 2-manifold` | Pontos duplicados / edge auto-tocando | Remover duplicados, verificar winding |
+| Output vazio do `difference()` | Inner maior que outer | Checar escala; inner deve ser menor |
+| Three.js mesh preto | Normais ausentes | `geometry.computeVertexNormals()` |
 
 ---
 
