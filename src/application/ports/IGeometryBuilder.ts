@@ -40,6 +40,10 @@ export interface ExtrudeConfig {
   /** Sampling steps per Bézier curve segment. Default 12 */
   bezierSteps?: number
 
+  // OpenSCAD template fields (for models with renderStrategy.type === 'openscad')
+  scadTemplate?: string                        // e.g. 'keychain'
+  templateParams?: Record<string, unknown>     // template-specific parameters
+
   // QR Code fields
   qrType?: string          // 'pix' | 'wifi' | 'whatsapp' | 'url' | 'text'
   qrShowBase?: boolean     // false = only raised modules (no base plate)

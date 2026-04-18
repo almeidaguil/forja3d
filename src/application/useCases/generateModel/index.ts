@@ -158,5 +158,28 @@ export async function generateModel(
     return { status: 'success', geometry, svgString, pngDataUrl, pixCopiaCola }
   }
 
+  if (renderStrategy.type === 'openscad') {
+    const scadTemplate = renderStrategy.scadTemplate ?? ''
+    if (!scadTemplate) return { status: 'error', error: 'scadTemplate não definido no modelo.' }
+
+    const geometry = await deps.geometryBuilder.build({
+      pathData: '', targetSize: 0, depth: 0,
+      scadTemplate,
+      templateParams: {
+        text:         values.text         ?? 'Forja3D',
+        text2:        values.text2        ?? '',
+        fontSize:     values.fontSize     ?? 8,
+        shape:        values.shape        ?? 'retangular_arredondado',
+        thickness:    values.thickness    ?? 4,
+        textDepth:    values.textDepth    ?? 1.5,
+        padding:      values.padding      ?? 4,
+        holeDiameter: values.holeDiameter ?? 6,
+        addNfc:       values.addNfc       ?? false,
+        fontKey:      values.fontKey      ?? 'NotoSans',
+      },
+    })
+    return { status: 'success', geometry }
+  }
+
   return { status: 'error', error: `Estratégia "${renderStrategy.type}" ainda não implementada.` }
 }

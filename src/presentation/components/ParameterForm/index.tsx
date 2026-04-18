@@ -1,6 +1,83 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ChangeEvent, JSX } from 'react'
 import type { ParameterSchema, ParameterValue } from '../../../shared/types'
+
+
+// Display labels for each font key — kept in sync with KEYCHAIN_FONTS in OpenScadGeometryBuilder
+const FONT_LABEL: Record<string, string> = {
+  NotoSans: 'Noto Sans', Roboto: 'Roboto', OpenSans: 'Open Sans',
+  Montserrat: 'Montserrat', Lato: 'Lato', Raleway: 'Raleway',
+  Oswald: 'Oswald', Anton: 'Anton', BebasNeue: 'Bebas Neue',
+  Righteous: 'Righteous', AlfaSlabOne: 'Alfa Slab One',
+  Pacifico: 'Pacifico', DancingScript: 'Dancing Script', GreatVibes: 'Great Vibes',
+  Sacramento: 'Sacramento', Satisfy: 'Satisfy', Lobster: 'Lobster',
+  Caveat: 'Caveat', PlayfairDisplay: 'Playfair Display', Merriweather: 'Merriweather',
+}
+
+// Google Fonts CSS family names for preview (separate from TTF for WASM)
+const FONT_CSS_FAMILY: Record<string, string> = {
+  NotoSans: 'Noto Sans', Roboto: 'Roboto', OpenSans: 'Open Sans',
+  Montserrat: 'Montserrat', Lato: 'Lato', Raleway: 'Raleway',
+  Oswald: 'Oswald', Anton: 'Anton', BebasNeue: 'Bebas Neue',
+  Righteous: 'Righteous', AlfaSlabOne: 'Alfa Slab One',
+  Pacifico: 'Pacifico', DancingScript: 'Dancing Script', GreatVibes: 'Great Vibes',
+  Sacramento: 'Sacramento', Satisfy: 'Satisfy', Lobster: 'Lobster',
+  Caveat: 'Caveat', PlayfairDisplay: 'Playfair Display', Merriweather: 'Merriweather',
+}
+
+let fontsLoaded = false
+function loadGoogleFonts(): void {
+  if (fontsLoaded || typeof document === 'undefined') return
+  fontsLoaded = true
+  // Load web fonts for UI preview only (WOFF2 for browser — TTF loaded separately for OpenSCAD)
+  const families = [
+    'Noto+Sans:wght@700', 'Roboto:wght@700', 'Open+Sans:wght@700',
+    'Montserrat:wght@700', 'Lato:wght@700', 'Raleway:wght@700',
+    'Oswald:wght@700', 'Anton', 'Bebas+Neue', 'Righteous', 'Alfa+Slab+One',
+    'Pacifico', 'Dancing+Script:wght@700', 'Great+Vibes',
+    'Sacramento', 'Satisfy', 'Lobster', 'Caveat:wght@700',
+    'Playfair+Display:wght@700',
+  ].join('&family=')
+  const link = document.createElement('link')
+  link.rel = 'stylesheet'
+  link.href = `https://fonts.googleapis.com/css2?family=${families}&display=swap`
+  document.head.appendChild(link)
+}
+
+function FontPickerField({ param, value, onChange }: FieldProps): JSX.Element {
+  const selected = String(value || param.default)
+  const keys = param.options ?? []
+
+  useEffect(() => { loadGoogleFonts() }, [])
+
+  return (
+    <div className="space-y-1.5">
+      <span className="text-sm text-zinc-300 block">{param.label}</span>
+      <div className="grid grid-cols-2 gap-1.5 max-h-48 overflow-y-auto pr-1">
+        {keys.map((key) => {
+          const family = FONT_CSS_FAMILY[key] ?? key
+          const label  = FONT_LABEL[key]  ?? key
+          const active = selected === key
+          return (
+            <button
+              key={key}
+              type="button"
+              onClick={() => onChange(param.key, key)}
+              className={`px-3 py-2 rounded-lg border text-sm text-left transition-colors ${
+                active
+                  ? 'border-orange-500 bg-orange-500/10 text-orange-300'
+                  : 'border-zinc-700 bg-zinc-800 text-zinc-200 hover:border-zinc-500'
+              }`}
+              style={{ fontFamily: `'${family}', sans-serif` }}
+            >
+              {label}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
 
 interface FieldProps {
   param: ParameterSchema
@@ -161,6 +238,10 @@ function ImageField({ param, onChange }: FieldProps): JSX.Element {
 }
 
 function ParameterField({ param, value, onChange }: FieldProps): JSX.Element {
+  // Font picker: special select for keychain font selection
+  if (param.type === 'select' && param.key === 'fontKey') {
+    return <FontPickerField param={param} value={value} onChange={onChange} />
+  }
   switch (param.type) {
     case 'number':  return <NumberField  param={param} value={value} onChange={onChange} />
     case 'color':   return <ColorField   param={param} value={value} onChange={onChange} />
