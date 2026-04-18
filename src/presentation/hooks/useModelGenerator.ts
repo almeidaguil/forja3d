@@ -10,6 +10,7 @@ import { exportStl } from '../../application/useCases/exportStl'
 
 export interface UseModelGeneratorReturn {
   stlBuffer: ArrayBuffer | null
+  secondaryStlBuffer: ArrayBuffer | null
   svgString: string | null
   pngDataUrl: string | null
   pixCopiaCola: string | null
@@ -17,6 +18,7 @@ export interface UseModelGeneratorReturn {
   error: string | null
   generate: () => Promise<void>
   download: () => void
+  downloadSecondary: () => void
   downloadSvg: () => void
   downloadPng: () => void
 }
@@ -51,12 +53,14 @@ export function useModelGenerator(
   imageFile: File | null,
 ): UseModelGeneratorReturn {
   const [stlBuffer, setStlBuffer] = useState<ArrayBuffer | null>(null)
+  const [secondaryStlBuffer, setSecondaryStlBuffer] = useState<ArrayBuffer | null>(null)
   const [svgString, setSvgString] = useState<string | null>(null)
   const [pngDataUrl, setPngDataUrl] = useState<string | null>(null)
   const [pixCopiaCola, setPixCopiaCola] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const stlRef = useRef<ArrayBuffer | null>(null)
+  const secondaryStlRef = useRef<ArrayBuffer | null>(null)
   const svgRef = useRef<string | null>(null)
   const pngRef = useRef<string | null>(null)
 
@@ -80,6 +84,8 @@ export function useModelGenerator(
       if (result.status === 'success' && result.geometry) {
         setStlBuffer(result.geometry)
         stlRef.current = result.geometry
+        setSecondaryStlBuffer(result.secondaryGeometry ?? null)
+        secondaryStlRef.current = result.secondaryGeometry ?? null
         setSvgString(result.svgString ?? null)
         svgRef.current = result.svgString ?? null
         setPngDataUrl(result.pngDataUrl ?? null)
@@ -97,7 +103,12 @@ export function useModelGenerator(
 
   const download = useCallback(() => {
     if (!stlRef.current || !model) return
-    exportStl(stlRef.current, `${model.slug}.stl`)
+    exportStl(stlRef.current, `${model.slug}-cortador.stl`)
+  }, [model])
+
+  const downloadSecondary = useCallback(() => {
+    if (!secondaryStlRef.current || !model) return
+    exportStl(secondaryStlRef.current, `${model.slug}-carimbo.stl`)
   }, [model])
 
   const downloadSvg = useCallback(() => {
@@ -115,5 +126,5 @@ export function useModelGenerator(
     a.href = pngRef.current; a.download = `${model.slug}.png`; a.click()
   }, [model])
 
-  return { stlBuffer, svgString, pngDataUrl, pixCopiaCola, isLoading, error, generate, download, downloadSvg, downloadPng }
+  return { stlBuffer, secondaryStlBuffer, svgString, pngDataUrl, pixCopiaCola, isLoading, error, generate, download, downloadSecondary, downloadSvg, downloadPng }
 }

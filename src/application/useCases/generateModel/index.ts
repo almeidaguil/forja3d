@@ -48,21 +48,41 @@ export async function generateModel(
       else if (values.mode === 'Cortador + Carimbo') mode = 'cutter-stamp'
 
       // CookieCad-style profile parameters (optional, builder uses defaults)
-      const tipWidth = typeof values.tipWidth === 'number' ? values.tipWidth : undefined
+      const tipWidth      = typeof values.tipWidth      === 'number' ? values.tipWidth      : undefined
       const chamferHeight = typeof values.chamferHeight === 'number' ? values.chamferHeight : undefined
-      const baseWidth = typeof values.baseWidth === 'number' ? values.baseWidth : undefined
-      const baseHeight = typeof values.baseHeight === 'number' ? values.baseHeight : undefined
+      const baseWidth     = typeof values.baseWidth     === 'number' ? values.baseWidth     : undefined
+      const baseHeight    = typeof values.baseHeight    === 'number' ? values.baseHeight    : undefined
+
+      if (mode === 'cutter-stamp' && deps.potraceBuilder) {
+        // Generate cutter (OpenSCAD) + stamp (Potrace) in parallel — two separate STLs
+        const stampRelief  = typeof values.stampRelief  === 'number'  ? values.stampRelief  : 2
+        const stampThreshold = typeof values.threshold  === 'number'  ? values.threshold    : 128
+        const turdSize     = typeof values.turdSize     === 'number'  ? values.turdSize     : 4
+        const bezierSteps  = typeof values.bezierSteps  === 'number'  ? values.bezierSteps  : 12
+        const mirror       = typeof values.mirror       === 'boolean' ? values.mirror       : true
+
+        // Stamp must fit inside the cutter's inner opening (= silhouette at targetSize).
+        // Apply tolerance per side so FDM inaccuracy (~±0.2mm) doesn't cause tight fit.
+        const STAMP_TOLERANCE_PER_SIDE = 0.4  // mm
+        const stampTargetSize = Math.max(20, targetSize - 2 * STAMP_TOLERANCE_PER_SIDE)
+
+        const [cutterGeometry, stampGeometry] = await Promise.all([
+          deps.geometryBuilder.build({
+            pathData: traced.pathData, targetSize, depth, wallThickness,
+            mode: 'cutter', tipWidth, chamferHeight, baseWidth, baseHeight,
+          }),
+          deps.potraceBuilder.build({
+            pathData: '', imageData, targetSize: stampTargetSize,
+            depth: 4, stampRelief, mirror,
+            threshold: stampThreshold, turdSize, bezierSteps,
+          }),
+        ])
+        return { status: 'success', geometry: cutterGeometry, secondaryGeometry: stampGeometry }
+      }
 
       const geometry = await deps.geometryBuilder.build({
-        pathData: traced.pathData,
-        targetSize,
-        depth,
-        wallThickness,
-        mode,
-        tipWidth,
-        chamferHeight,
-        baseWidth,
-        baseHeight,
+        pathData: traced.pathData, targetSize, depth, wallThickness,
+        mode, tipWidth, chamferHeight, baseWidth, baseHeight,
       })
       return { status: 'success', geometry }
     }
