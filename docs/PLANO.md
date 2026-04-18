@@ -24,9 +24,11 @@
 | OpenSCAD WASM renderer | ✅ Implementado (builder principal) |
 | Canvas image tracer | ✅ 4-conectividade + flood-fill + winding CCW |
 | Cortador de biscoito — modo Cortador | ✅ Funcional para qualquer forma (coelho, formas côncavas) |
-| Cortador de biscoito — modo Cortador+Carimbo | ⚠️ Gera os dois; carimbo só tem silhueta (sem detalhes internos) |
+| Cortador de biscoito — modo Cortador+Carimbo | ✅ Cortador (OpenSCAD) + Carimbo Potrace (dois STLs) |
 | CI em PRs (build + lint) | ✅ Workflow ci.yml rodando em todos os PRs |
 | Fix WASM fetch (Vite) | ✅ Plugin middleware remove ?v= do openscad-wasm |
+| QR Code Pix 3D | ✅ EMV BR Code, download STL/SVG/PNG, Pix copia-e-cola |
+| Chaveiro com Texto | ✅ 19 fontes locais, picker visual, NFC, 3 formatos |
 | Roteamento por URL | 🔲 A implementar (V1 usa useState) |
 | Logo v2 (forja/faíscas) | ✅ Completo |
 | Documentação completa (PT) | ✅ Completo |
@@ -390,3 +392,7 @@ Se você está retomando o trabalho e o chat foi perdido, siga estes passos:
 | 2026-04-17 | fix/tracer-flood-fill → develop → main: P0 resolvido — flood-fill + opening morfológico + winding + parede para fora |
 | 2026-04-17 | ci.yml: CI Build & Lint em todos os PRs para develop/main |
 | 2026-04-17 | docs/memory: memórias Claude versionadas em .claude/memory/ para reuso por outras IAs |
+| 2026-04-17 | fix/cutter-stamp-potrace: Cortador+Carimbo gera dois STLs (OpenSCAD cortador + Potrace carimbo) com tolerância de encaixe 0.4mm |
+| 2026-04-17 | feat/qr-code: QR Code Pix 3D — EMV BR Code client-side, download STL/SVG/PNG, Pix copia-e-cola para validação |
+| 2026-04-17 | feat/keychain-text: Chaveiro com Texto — 19 fontes TTF locais, picker visual, slot NFC, borda decorativa, 3 formatos |
+| 2026-04-17 | Workflow de documentação definido: docs atualizados no mesmo PR da feature (não branch separada) |

@@ -6,33 +6,30 @@ originSessionId: 7c100e83-ac8d-4d06-9628-c081741764ed
 ---
 **Estado em 2026-04-17** — branch ativa: `main` (em sincronia com `develop`)
 
-**Em produção:**
-- ✅ Cortador de biscoito (OpenSCAD, perfil CookieCad, parede para fora)
-- ✅ Carimbo com detalhes reais (Potrace multi-path, base no formato da silhueta)
-- ✅ CI em PRs, Deploy automático no GitHub Pages
+**Em produção (✅):**
+- Cortador de biscoito — parede para fora, perfil CookieCad
+- Carimbo com detalhes reais (Potrace multi-path, base na silhueta)
+- Cortador + Carimbo — dois STLs separados, encaixe garantido (0.4mm folga)
+- QR Code Pix 3D — EMV BR Code client-side, download STL/SVG/PNG, Pix copia-e-cola
+- Chaveiro com Texto — 19 fontes TTF locais, picker visual, NFC, 3 formatos
+- CI em PRs, Deploy automático GitHub Pages
 
-**Catálogo completo V1 — decidido pela equipe (2026-04-17):**
+**Workflow de documentação definido (2026-04-17):**
+Docs (PLANO.md + memórias) são atualizados no MESMO PR da feature — não branch separada.
+A cada feature concluída: atualizar PLANO.md (status + histórico) + .claude/memory/project_state.md + sincronizar .claude/memory/ para o repo.
 
-Sprint 1 (P1 — próximas branches):
-1. `feat/keychain-text` — Chaveiro com texto (OpenSCAD, 2 linhas, NFC boolean)
-2. `feat/keychain-image` — Chaveiro com imagem (silhueta vira formato do chaveiro)
+**Próxima prioridade — Sprint 2 (P2):**
+1. `feat/letreiro-2-camadas` — Letreiro com offset 2 camadas (190 downloads Mafagrafos)
+2. `feat/tag` — Plaquinha/Tag (@social, pet tag, maçaneta)
 
-Sprint 2 (P2):
-3. `feat/letreiro-2-camadas` — Letreiro com offset 2 camadas (190 downloads Mafagrafos)
-4. `feat/tag` — Plaquinha/Tag (@social, pet tag, maçaneta)
+**Sprint 3 (P3) — depois do Sprint 2:**
+- `feat/url-routing` — React Router v7
+- `feat/wasm-worker` — Web Worker para OpenSCAD (eliminar o freeze da UI)
+- `feat/ux-polish` — Skeleton, toaster, mobile
+- `fix/cutter-stamp-params` — parâmetros do carimbo ajustáveis no modo Cortador+Carimbo
 
-Sprint 3 (P3):
-5. `feat/url-routing` — React Router v7
-6. `fix/cutter-stamp-potrace` — Cortador + Carimbo com Potrace (2 STLs)
-7. `feat/wasm-worker` — Web Worker para OpenSCAD
-8. `feat/ux-polish` — Skeleton, toaster, mobile
+**Por que a ordem importa:**
+Letreiro tem 190 downloads no Mafagrafos — alta demanda comprovada e implementação simples (OpenSCAD template). A plaquinha (Tag) é variação do mesmo padrão. Ambas completam o catálogo de "texto personalizado" antes de investir em polimentos técnicos.
 
-**Fora do escopo V1:** flexi animals, @social com ícones, litofane, string art, cumbuca
-
-**NFC:** boolean `addNfc` em todos os chaveiros OpenSCAD → recesso ⌀26mm × 1.2mm no verso
-
-**Próxima branch:** `feat/keychain-text`
-
-**Why:** Catálogo definido com base em análise de mercado (Mafagrafos + MakerWorld). O chaveiro de texto tem menor custo de implementação (OpenSCAD puro) e demanda imediata comprovada.
-
-**How to apply:** Seguir o catálogo da ordem definida. NFC é parâmetro boolean. Letreiro e Tag são variações de texto — máximo reuso do OpenSCAD template.
+**Why:** Sprint 2 completa o catálogo de texto. Sprint 3 melhora qualidade/performance sem adicionar modelos novos.
+**How to apply:** Iniciar sempre pelo item mais alto da lista. Documentar no mesmo PR da feature.
