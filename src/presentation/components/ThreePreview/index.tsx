@@ -6,6 +6,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 
 interface ThreePreviewProps {
   stlBuffer: ArrayBuffer | null
+  secondaryStlBuffer?: ArrayBuffer | null
   color: string
 }
 
@@ -25,17 +26,12 @@ function Placeholder(): JSX.Element {
   )
 }
 
-export function ThreePreview({ stlBuffer, color }: ThreePreviewProps): JSX.Element {
+export function ThreePreview({ stlBuffer, secondaryStlBuffer, color }: ThreePreviewProps): JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null)
   const materialRef = useRef<THREE.MeshPhongMaterial | null>(null)
-  // colorRef keeps the latest color value accessible inside the setup effect
-  // without needing it as a dependency (which would recreate the scene on every color change)
   const colorRef = useRef(color)
-  useEffect(() => {
-    colorRef.current = color
-  }, [color])
+  useEffect(() => { colorRef.current = color }, [color])
 
-  // Scene setup: runs only when the STL buffer changes
   useEffect(() => {
     const container = containerRef.current
     if (!container || !stlBuffer) return
@@ -64,25 +60,47 @@ export function ThreePreview({ stlBuffer, color }: ThreePreviewProps): JSX.Eleme
     const controls = new OrbitControls(camera, renderer.domElement)
     controls.enableDamping = true
 
-    const geometry = new STLLoader().parse(stlBuffer)
-    geometry.center()
-    geometry.computeBoundingBox()
-
-    const size = new THREE.Vector3()
-    geometry.boundingBox!.getSize(size)
-    const maxDim = Math.max(size.x, size.y, size.z)
-    camera.position.set(0, 0, maxDim * 2)
-    controls.target.set(0, 0, 0)
-    controls.update()
-
-    // colorRef.current is up-to-date because the color-sync effect runs before this one
     const material = new THREE.MeshPhongMaterial({
       color: colorRef.current,
       specular: 0x222222,
       shininess: 40,
     })
     materialRef.current = material
-    scene.add(new THREE.Mesh(geometry, material))
+
+    const loader = new STLLoader()
+    const geometries: THREE.BufferGeometry[] = []
+
+    // Primary mesh (cutter or main model)
+    const primaryGeo = loader.parse(stlBuffer)
+    primaryGeo.computeBoundingBox()
+    const primarySize = new THREE.Vector3()
+    primaryGeo.boundingBox!.getSize(primarySize)
+    const maxDim = Math.max(primarySize.x, primarySize.y, primarySize.z)
+
+    if (secondaryStlBuffer) {
+      // Place cutter on the left, stamp on the right with a gap
+      const secondaryGeo = loader.parse(secondaryStlBuffer)
+      secondaryGeo.center()
+      primaryGeo.center()
+
+      const gap = maxDim * 0.15
+      primaryGeo.translate(-maxDim / 2 - gap / 2, 0, 0)
+      secondaryGeo.translate(maxDim / 2 + gap / 2, 0, 0)
+
+      scene.add(new THREE.Mesh(primaryGeo, material))
+      scene.add(new THREE.Mesh(secondaryGeo, material))
+      geometries.push(primaryGeo, secondaryGeo)
+
+      camera.position.set(0, 0, maxDim * 2.5)
+    } else {
+      primaryGeo.center()
+      scene.add(new THREE.Mesh(primaryGeo, material))
+      geometries.push(primaryGeo)
+      camera.position.set(0, 0, maxDim * 2)
+    }
+
+    controls.target.set(0, 0, 0)
+    controls.update()
 
     let frameId: number
     function animate() {
@@ -106,14 +124,13 @@ export function ThreePreview({ stlBuffer, color }: ThreePreviewProps): JSX.Eleme
       observer.disconnect()
       controls.dispose()
       renderer.dispose()
-      geometry.dispose()
+      geometries.forEach(g => g.dispose())
       material.dispose()
       materialRef.current = null
       if (container.contains(renderer.domElement)) container.removeChild(renderer.domElement)
     }
-  }, [stlBuffer])
+  }, [stlBuffer, secondaryStlBuffer])
 
-  // Update material color reactively without rebuilding the entire scene
   useEffect(() => {
     if (materialRef.current) materialRef.current.color.set(color)
   }, [color])

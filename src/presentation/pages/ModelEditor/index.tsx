@@ -86,6 +86,7 @@ interface FormPanelProps {
   onImageChange: (file: File | null) => void
   onGenerate: () => void
   onDownload: () => void
+  onDownloadSecondary?: () => void
   onDownloadSvg?: () => void
   onDownloadPng?: () => void
   pixCopiaCola?: string
@@ -95,7 +96,7 @@ function FormPanel({
   model, values, imageFile, needsImage,
   isLoading, canGenerate, errorMsg, stlReady,
   onValueChange, onImageChange, onGenerate, onDownload,
-  onDownloadSvg, onDownloadPng, pixCopiaCola,
+  onDownloadSecondary, onDownloadSvg, onDownloadPng, pixCopiaCola,
 }: FormPanelProps): JSX.Element {
   return (
     <div className="space-y-6 rounded-xl border border-zinc-800 bg-zinc-900 p-6">
@@ -119,7 +120,12 @@ function FormPanel({
 
       {stlReady && (
         <Button className="w-full" variant="secondary" onClick={onDownload}>
-          Baixar STL (3D)
+          {onDownloadSecondary ? 'Baixar Cortador (STL)' : 'Baixar STL (3D)'}
+        </Button>
+      )}
+      {onDownloadSecondary && (
+        <Button className="w-full" variant="secondary" onClick={onDownloadSecondary}>
+          Baixar Carimbo (STL)
         </Button>
       )}
       {onDownloadSvg && (
@@ -161,7 +167,7 @@ function FormPanel({
 export function ModelEditor({ slug, onBack }: ModelEditorProps): JSX.Element {
   const model = getModelBySlug(slug)
   const { values, imageFile, setValue, setImageFile } = useParameterForm(model?.parameters ?? [])
-  const { stlBuffer, svgString, pngDataUrl, pixCopiaCola, isLoading, error, generate, download, downloadSvg, downloadPng } = useModelGenerator(model, values, imageFile)
+  const { stlBuffer, secondaryStlBuffer, svgString, pngDataUrl, pixCopiaCola, isLoading, error, generate, download, downloadSecondary, downloadSvg, downloadPng } = useModelGenerator(model, values, imageFile)
 
   const needsImage =
     (model?.renderStrategy.type === 'three-extrude' ||
@@ -204,11 +210,12 @@ export function ModelEditor({ slug, onBack }: ModelEditorProps): JSX.Element {
           onImageChange={setImageFile}
           onGenerate={generate}
           onDownload={download}
+          onDownloadSecondary={secondaryStlBuffer ? downloadSecondary : undefined}
           onDownloadSvg={svgString ? downloadSvg : undefined}
           onDownloadPng={pngDataUrl ? downloadPng : undefined}
           pixCopiaCola={pixCopiaCola ?? undefined}
         />
-        <ThreePreview stlBuffer={stlBuffer} color={previewColor} />
+        <ThreePreview stlBuffer={stlBuffer} secondaryStlBuffer={secondaryStlBuffer} color={previewColor} />
       </div>
     </main>
   )

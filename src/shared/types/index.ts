@@ -44,9 +44,10 @@ export interface Model {
 
 export interface GenerationResult {
   status: 'success' | 'error'
-  geometry?: ArrayBuffer   // STL binary (3D print)
-  svgString?: string       // SVG vector (QR Code, laser engraving)
-  pngDataUrl?: string      // PNG image (QR Code, paper print)
-  pixCopiaCola?: string    // Pix payload string for bank app testing
+  geometry?: ArrayBuffer          // STL binary — primary (cortador ou modelo principal)
+  secondaryGeometry?: ArrayBuffer // STL binary — secundário (carimbo no modo cutter-stamp)
+  svgString?: string              // SVG vector (QR Code, laser engraving)
+  pngDataUrl?: string             // PNG image (QR Code, paper print)
+  pixCopiaCola?: string           // Pix payload string for bank app testing
   error?: string
 }
