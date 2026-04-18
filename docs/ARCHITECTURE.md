@@ -133,22 +133,39 @@ Implementa as portas. Tem conhecimento de bibliotecas externas (Three.js, OpenSC
 
 ### Adaptadores
 
-| Adaptador | Porta | Tecnologia |
-|---|---|---|
-| `OpenScadWasmRenderer` | `IOpenScadRenderer` | `openscad-wasm-prebuilt` |
-| `CanvasImageTracer` | `IImageTracer` | Canvas API + rastreamento de contorno |
-| `ThreeGeometryBuilder` | `IThreeGeometryBuilder` | Three.js `ExtrudeGeometry`, `TextGeometry` |
-| `ThreeStlExporter` | `IStlExporter` | Three.js `STLExporter` |
+| Adaptador | Porta | Tecnologia | Modelos |
+|---|---|---|---|
+| `OpenScadGeometryBuilder` | `IGeometryBuilder` | `openscad-wasm-prebuilt` (WASM) | Cortador, Chaveiro, template SCAD |
+| `PotraceStampBuilder` | `IGeometryBuilder` | `potrace` + Three.js | Carimbo (detalhes reais) |
+| `QrCodeGeometryBuilder` | `IGeometryBuilder` | `qrcode` + Three.js | QR Code Pix |
+| `HeightmapStampBuilder` | `IGeometryBuilder` | Three.js | Legado — heightmap flat |
+| `CanvasImageTracer` | `IImageTracer` | Canvas API + Moore-Neighbor 4-conn | Extração de contorno para cortador |
+| `ThreeGeometryBuilder` | `IGeometryBuilder` | Three.js `ExtrudeGeometry` | Legado |
 
-### Estratégia de rastreamento de imagem
+### Serviços de aplicação
 
-Duas opções avaliadas para a V1:
+- **`src/application/services/imageProcessing.ts`**: `fillEnclosedRegions()` — flood-fill BFS que converte imagens de contorno em silhuetas sólidas antes do rastreamento. Usado pelo cortador antes de passar para o tracer.
 
-1. **Canvas API + contorno manual**: aplica threshold na imagem para preto/branco e executa um algoritmo de marching-squares para extrair o polígono do contorno. Rápido, sem dependências adicionais, mas com menor qualidade para formas complexas.
+### Estratégia de rastreamento e geração de geometria
 
-2. **Potrace (npm)**: vetorização de maior qualidade, mas exige execução em um Worker por ser intensivo em CPU. Melhor para qualidade em produção.
+**Cortador de biscoito:**
+1. `fillEnclosedRegions(imageData, threshold)` — preenche interior da forma
+2. `CanvasImageTracer.trace()` — Moore-Neighbor 4-conectividade → path SVG
+3. `OpenScadGeometryBuilder.build()` — path → SCAD → WASM → STL
 
-**Decisão**: Começar com Canvas API + marching-squares pela velocidade. Migrar para Potrace em um Web Worker quando a qualidade se tornar uma preocupação (documentar em V2_ROADMAP se necessário).
+**Carimbo (detalhes reais):**
+1. `PotraceStampBuilder.build()` — imageData → Potrace multi-path → Three.js ExtrudeGeometry com holes → STL
+
+**Chaveiro com Texto:**
+1. `OpenScadGeometryBuilder.buildFromTemplate('keychain', params)` — template SCAD parametrizado, fontes TTF de `public/fonts/`
+
+**QR Code Pix:**
+1. `buildPixPayload()` — gera payload EMV BR Code (100% client-side)
+2. `QrCodeGeometryBuilder.build()` — matriz QR → Three.js BoxGeometry por módulo → STL
+
+### Fontes tipográficas
+
+19 fontes TTF em `public/fonts/` (servidas como assets estáticos, sem CDN). Usadas pelo OpenScadGeometryBuilder via Emscripten FS. Script de download: `scripts/download-fonts.mjs`.
 
 ---
 
@@ -206,7 +223,9 @@ Armazenados em `docs/adr/`. Formato: `NNNN-titulo.md`.
 | [0001](adr/0001-client-side-only.md) | Toda renderização é client-side (sem backend na V1) | Aceito |
 | [0002](adr/0002-openscad-wasm.md) | Usar OpenSCAD WASM para modelos paramétricos de texto/geometria | Aceito |
 | [0003](adr/0003-three-extrude-for-images.md) | Usar Three.js ExtrudeGeometry para modelos baseados em imagem | Aceito |
-| [0004](adr/0004-canvas-tracer-v1.md) | Usar rastreamento de contorno via Canvas API em vez de Potrace na V1 | Aceito |
+| [0004](adr/0004-canvas-tracer-v1.md) | Canvas API para cortador; Potrace para carimbo com detalhes | **Atualizado** — Potrace adotado para stamp (P1a) |
+| 0005 | QR Code Pix gerado 100% client-side via payload EMV BR Code | Aceito |
+| 0006 | Fontes TTF em `public/fonts/` (sem CDN) para OpenSCAD WASM | Aceito |
 
 ---
 

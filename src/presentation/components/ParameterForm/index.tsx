@@ -252,6 +252,17 @@ function ParameterField({ param, value, onChange }: FieldProps): JSX.Element {
   }
 }
 
+function isParameterVisible(param: ParameterSchema, values: Record<string, ParameterValue>): boolean {
+  if (param.key === 'qrContent') return values.qrType !== 'Wi-Fi'
+  if (param.key === 'wifiPassword') {
+    return values.qrType === 'Wi-Fi' && values.wifiSecurity !== 'Sem senha'
+  }
+  if (['wifiSsid', 'wifiPassword', 'wifiSecurity'].includes(param.key)) {
+    return values.qrType === 'Wi-Fi'
+  }
+  return true
+}
+
 interface ParameterFormProps {
   parameters: ParameterSchema[]
   values: Record<string, ParameterValue>
@@ -261,7 +272,7 @@ interface ParameterFormProps {
 export function ParameterForm({ parameters, values, onChange }: ParameterFormProps): JSX.Element {
   return (
     <div className="space-y-5">
-      {parameters.map((param) => (
+      {parameters.filter((param) => isParameterVisible(param, values)).map((param) => (
         <ParameterField
           key={param.key}
           param={param}
