@@ -9,3 +9,4 @@
 - [Feedback: disciplina de commits](feedback_commit_discipline.md) — build + lint OK antes de qualquer commit; proibido WIP ou código quebrado
 - [Feedback: testar antes de commitar](feedback_test_before_commit.md) — testar no browser (clicar "Gerar Preview") antes de qualquer commit/push/PR
 - [Feedback: deploy first](feedback_deploy_first.md) — sempre mergear develop→main antes de iniciar próxima branch
+- [Feedback: reutilizar fontes](feedback_fonts.md) — usar as 19 TTF de public/fonts/ em qualquer modelo que precise de texto
