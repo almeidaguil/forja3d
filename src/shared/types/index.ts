@@ -3,7 +3,7 @@ export type ParameterType = 'string' | 'number' | 'boolean' | 'select' | 'color'
 export type ParameterValue = string | number | boolean
 
 export type RenderStrategy =
-  | { type: 'openscad'; scadTemplate: string }
+  | { type: 'openscad'; scadTemplate: string; params?: Record<string, unknown> }
   | { type: 'three-extrude'; svgSource: 'image' | 'builtin'; builtinShape?: BuiltinShape }
   | { type: 'three-heightmap'; svgSource: 'image' }
   | { type: 'potrace-stamp'; svgSource: 'image' }

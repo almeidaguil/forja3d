@@ -80,6 +80,18 @@
       "unit": "mm"
     },
     {
+      "key": "fontKey",
+      "type": "select",
+      "label": "Fonte",
+      "default": "NotoSans",
+      "options": [
+        "NotoSans", "Roboto", "OpenSans", "Montserrat", "Lato", "Raleway",
+        "Oswald", "Anton", "BebasNeue", "Righteous", "AlfaSlabOne",
+        "Pacifico", "DancingScript", "GreatVibes", "Sacramento", "Satisfy",
+        "Lobster", "Caveat", "PlayfairDisplay", "Merriweather"
+      ]
+    },
+    {
       "key": "addNfc",
       "type": "boolean",
       "label": "Adicionar slot para tag NFC",

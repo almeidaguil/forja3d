@@ -319,6 +319,129 @@ linear_extrude(height = ${depth.toFixed(2)}) {
 `
 }
 
+/* ------------------------------------------------------------------ */
+/*  Keychain text template                                             */
+/* ------------------------------------------------------------------ */
+
+// Curated fonts for 3D printed keychains — served from public/fonts/ (no CDN dependency).
+// Each entry: [display name, internal key, local font filename in public/fonts/]
+// Run `node scripts/download-fonts.mjs` to populate public/fonts/.
+export const KEYCHAIN_FONTS: [string, string, string][] = [
+  // ── Sans-serif (clean, legible at any size) ──
+  ['Noto Sans',       'NotoSans',      'NotoSans-Bold.ttf'],
+  ['Roboto',          'Roboto',        'Roboto-Bold.ttf'],
+  ['Open Sans',       'OpenSans',      'OpenSans-Bold.ttf'],
+  ['Montserrat',      'Montserrat',    'Montserrat[wght].ttf'],
+  ['Lato',            'Lato',          'Lato-Bold.ttf'],
+  ['Raleway',         'Raleway',       'Raleway[wght].ttf'],
+  // ── Display / Impact (strong, great for names) ──
+  ['Oswald',          'Oswald',        'Oswald-Bold.ttf'],
+  ['Anton',           'Anton',         'Anton-Regular.ttf'],
+  ['Bebas Neue',      'BebasNeue',     'BebasNeue-Regular.ttf'],
+  ['Righteous',       'Righteous',     'Righteous-Regular.ttf'],
+  ['Alfa Slab One',   'AlfaSlabOne',   'AlfaSlabOne-Regular.ttf'],
+  // ── Script / Cursiva (elegante, ideal para nomes e presentes) ──
+  ['Pacifico',        'Pacifico',      'Pacifico-Regular.ttf'],
+  ['Dancing Script',  'DancingScript', 'DancingScript[wght].ttf'],
+  ['Great Vibes',     'GreatVibes',    'GreatVibes-Regular.ttf'],
+  ['Sacramento',      'Sacramento',    'Sacramento-Regular.ttf'],
+  ['Satisfy',         'Satisfy',       'Satisfy-Regular.ttf'],
+  ['Lobster',         'Lobster',       'Lobster-Regular.ttf'],
+  ['Caveat',          'Caveat',        'Caveat-Bold.ttf'],
+  // ── Serif / Clássicas ──
+  ['Playfair Display','PlayfairDisplay','PlayfairDisplay[wght].ttf'],
+]
+
+interface KeychainParams {
+  text: string; text2: string; fontSize: number
+  shape: string; thickness: number; textDepth: number
+  padding: number; holeDiameter: number; addNfc: boolean
+  fontName?: string  // OpenSCAD font name — must match KEYCHAIN_FONTS entry
+}
+
+function generateKeychainScad(p: KeychainParams): string {
+  const { text, text2, fontSize, shape, thickness, textDepth, padding, holeDiameter, addNfc } = p
+  const hasText2 = text2.trim().length > 0
+  const borderWidth = 1.5  // mm — decorative border frame around plate edge
+
+  // Auto-dimensions: plate width adapts to longest text line
+  const longestLen = Math.max(text.length, text2.length)
+  const K = 0.65
+  const autoWidth = fontSize * longestLen * K + 2 * padding + holeDiameter + 3
+  const plateWidth = Math.max(40, autoWidth)
+
+  const lineSpacing = fontSize * 0.4
+  const textBlockH  = hasText2 ? (2 * fontSize + lineSpacing) : fontSize
+  const holeMargin  = holeDiameter / 2 + 3
+  const plateHeight = Math.max(30, textBlockH + 2 * padding + holeDiameter + holeMargin)
+
+  const r = Math.min(plateWidth, plateHeight) * 0.15
+  const holeCy = plateHeight / 2 - holeDiameter / 2 - 3
+
+  const textCenterY  = hasText2 ? (lineSpacing / 2 + fontSize / 2) : 0
+  const text2CenterY = -(lineSpacing / 2 + fontSize / 2)
+
+  // Shape module — reused for plate, border, and NFC check
+  const shapeModule = shape === 'retangular'
+    ? `square([${plateWidth.toFixed(2)}, ${plateHeight.toFixed(2)}], center = true)`
+    : shape === 'oval'
+      ? `scale([${(plateWidth / plateHeight).toFixed(4)}, 1]) circle(d = ${plateHeight.toFixed(2)})`
+      : `offset(r = ${r.toFixed(2)}) square([${(plateWidth - 2 * r).toFixed(2)}, ${(plateHeight - 2 * r).toFixed(2)}], center = true)`
+
+  const t = text.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+  const t2 = text2.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+
+  const fontAttr = p.fontName ? `, font = "${p.fontName}"` : ''
+
+  return `
+// Chaveiro com Texto — gerado pelo Forja3D
+// Adaptive quality: $fa + $fs limit segment count on small font curves
+// without affecting visual quality at typical keychain sizes (40-80mm).
+// $fn=0 enables $fa/$fs mode; circle hole gets explicit $fn=48 override.
+$fn = 0;
+$fa = 5;
+$fs = 0.5;
+
+difference() {
+  union() {
+    // Placa base
+    linear_extrude(height = ${thickness.toFixed(2)})
+      ${shapeModule};
+
+    // Borda decorativa em relevo (${borderWidth}mm)
+    translate([0, 0, ${thickness.toFixed(2)}])
+      linear_extrude(height = ${textDepth.toFixed(2)})
+        difference() {
+          ${shapeModule};
+          offset(delta = ${(-borderWidth).toFixed(2)}) ${shapeModule};
+        }
+
+    // Texto linha 1 em relevo
+    translate([0, ${textCenterY.toFixed(2)}, ${thickness.toFixed(2)}])
+      linear_extrude(height = ${textDepth.toFixed(2)})
+        text("${t}", size = ${fontSize.toFixed(2)},
+             halign = "center", valign = "center"${fontAttr});
+${hasText2 ? `
+    // Texto linha 2 em relevo
+    translate([0, ${text2CenterY.toFixed(2)}, ${thickness.toFixed(2)}])
+      linear_extrude(height = ${textDepth.toFixed(2)})
+        text("${t2}", size = ${fontSize.toFixed(2)},
+             halign = "center", valign = "center"${fontAttr});` : ''}
+  }
+
+  // Furo para argola — $fn=48 explicit for smooth circle
+  translate([0, ${holeCy.toFixed(2)}, -0.1])
+    cylinder(h = ${(thickness + textDepth + 0.2).toFixed(2)}, d = ${holeDiameter.toFixed(2)}, $fn = 48);
+${addNfc ? `
+  // Recesso para tag NFC no verso (⌀26mm × 1.2mm)
+  translate([0, 0, -0.1])
+    cylinder(h = 1.3, d = 26);` : ''}
+}
+`
+}
+
+/* ------------------------------------------------------------------ */
+
 /**
  * OpenSCAD WASM-based geometry builder.
  *
@@ -344,6 +467,14 @@ export class OpenScadGeometryBuilder implements IGeometryBuilder {
   }
 
   async build(config: ExtrudeConfig): Promise<ArrayBuffer> {
+    // --- Template dispatch (e.g. keychain) ---
+    if (config.scadTemplate) {
+      const params = config.templateParams ?? {}
+      const scadCode = this.buildFromTemplate(config.scadTemplate, params)
+      const fontKey = params.fontKey as string | undefined
+      return this.renderScad(scadCode, fontKey)
+    }
+
     const {
       pathData,
       targetSize,
@@ -438,6 +569,96 @@ export class OpenScadGeometryBuilder implements IGeometryBuilder {
     }
 
     // Convert ASCII STL to binary ArrayBuffer
+    return asciiStlToArrayBuffer(asciiStl)
+  }
+
+  private buildFromTemplate(template: string, params: Record<string, unknown>): string {
+    if (template === 'keychain') {
+      return generateKeychainScad({
+        text:         String(params.text         ?? 'Forja3D'),
+        text2:        String(params.text2        ?? ''),
+        fontSize:     Number(params.fontSize     ?? 8),
+        shape:        String(params.shape        ?? 'retangular_arredondado'),
+        thickness:    Number(params.thickness    ?? 4),
+        textDepth:    Number(params.textDepth    ?? 1.5),
+        padding:      Number(params.padding      ?? 4),
+        holeDiameter: Number(params.holeDiameter ?? 6),
+        addNfc:       Boolean(params.addNfc      ?? false),
+        fontName:     params.fontKey ? String(params.fontKey) : undefined,
+      })
+    }
+    throw new Error(`Unknown scadTemplate: ${template}`)
+  }
+
+  // Per-font cache: fontKey → TTF bytes
+  private fontCache = new Map<string, Uint8Array>()
+
+  /** Fetches a TTF font from public/fonts/ (same origin, no CORS) and caches it per session. */
+  private async getFontData(fontKey?: string): Promise<{ data: Uint8Array; key: string } | null> {
+    const entry = KEYCHAIN_FONTS.find(([, k]) => k === fontKey) ?? KEYCHAIN_FONTS[0]
+    const [, key, filename] = entry
+
+    const cached = this.fontCache.get(key)
+    if (cached) return { data: cached, key }
+
+    // Fonts are in public/fonts/ — served from the same origin at BASE_URL/fonts/
+    const base = import.meta.env.BASE_URL ?? '/'
+    const url = `${base}fonts/${filename}`
+
+    try {
+      const resp = await fetch(url)
+      if (!resp.ok) {
+        if (key !== KEYCHAIN_FONTS[0][1]) return this.getFontData(KEYCHAIN_FONTS[0][1])
+        return null
+      }
+      const data = new Uint8Array(await resp.arrayBuffer())
+      this.fontCache.set(key, data)
+      return { data, key }
+    } catch {
+      if (key !== KEYCHAIN_FONTS[0][1]) return this.getFontData(KEYCHAIN_FONTS[0][1])
+      return null
+    }
+  }
+
+  private async renderScad(scadCode: string, fontKey?: string): Promise<ArrayBuffer> {
+    const instance = await this.createInstance()
+
+    // Set up font so text() works in the WASM environment.
+    // The WASM FS starts nearly empty; we create the directory tree,
+    // write the font file fetched from CDN, and configure fontconfig.
+    const raw = (instance as { getInstance?: () => {
+      FS: {
+        writeFile: (p: string, d: string | Uint8Array) => void
+        mkdir: (p: string) => void
+        readdir: (p: string) => string[]
+      }
+    } }).getInstance?.()
+
+    if (raw?.FS) {
+      const fontResult = await this.getFontData(fontKey)
+      const fontData = fontResult?.data
+      if (fontData) {
+        try {
+          for (const dir of ['/usr', '/usr/share', '/usr/share/fonts', '/etc', '/etc/fonts', '/tmp', '/tmp/fontcache']) {
+            try { raw.FS.mkdir(dir) } catch { /* already exists */ }
+          }
+          raw.FS.writeFile('/usr/share/fonts/Font.ttf', fontData)
+          raw.FS.writeFile('/etc/fonts/fonts.conf',
+            '<?xml version="1.0"?>' +
+            '<!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">' +
+            '<fontconfig>' +
+            '<dir>/usr/share/fonts</dir>' +
+            '<cachedir>/tmp/fontcache</cachedir>' +
+            '</fontconfig>'
+          )
+        } catch { /* non-fatal */ }
+      }
+    }
+
+    const asciiStl = await instance.renderToStl(scadCode)
+    if (!asciiStl || asciiStl.trim().length === 0) {
+      throw new Error('OpenSCAD produced empty output.')
+    }
     return asciiStlToArrayBuffer(asciiStl)
   }
 }
