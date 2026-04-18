@@ -87,8 +87,9 @@ interface Model {
 | Arquivo | Estratégia | Parâmetros principais | Status |
 |---------|-----------|----------------------|--------|
 | `cookie-cutter.json` | `openscad` | cutterHeight, wallThickness, tipWidth, chamferHeight, baseWidth, baseHeight, targetSize, threshold, color | ✅ Funcionando |
-| `stamp.json` | `three-heightmap` | baseHeight, reliefHeight, targetSize, threshold, stampResolution, mirror, color | ⚠️ Gera; sem detalhes internos |
-| `keychain.json` | `openscad` | text, fontSize, depth, padding, thickness, color | 🔲 Template SCAD pendente |
+| `stamp.json` | `potrace-stamp` | baseHeight, reliefHeight, targetSize, threshold, turdSize, bezierSteps, mirror, color | ✅ Detalhes reais via Potrace |
+| `keychain.json` | `openscad` | text, text2, fontSize, shape, fontKey, thickness, textDepth, padding, holeDiameter, addNfc, color | ✅ 19 fontes, NFC, 3 formatos |
+| `qr-pix.json` | `three-qr` | qrPixKeyType, qrContent, qrValue, qrIdentifier, targetSize, depth, stampRelief, qrShowBase, color | ✅ Pix EMV, STL/SVG/PNG |
 
 ### Páginas e Componentes
 - **Home:** grid responsivo (1/2/3 col), modelos agrupados por categoria, cards com badge, ícone colorido, título e descrição
@@ -219,7 +220,35 @@ EOF
 
 ---
 
-### ✅ P1 — Carimbo com detalhes reais — CONCLUÍDO (2026-04-17)
+### ✅ P1a — Carimbo com detalhes reais — CONCLUÍDO (2026-04-17)
+
+Branch: `feat/potrace-stamp` → main
+
+### ✅ P1b — Chaveiro com Texto — CONCLUÍDO (2026-04-17)
+
+Branch: `feat/keychain-text` → main
+
+- OpenSCAD template com borda decorativa, 2 linhas de texto, furo argola, NFC
+- 19 fontes TTF em `public/fonts/` (sem CDN), picker visual no formulário
+- `$fa/$fs` para qualidade adaptiva (reduz ~80% polígonos vs `$fn=64`)
+
+### ✅ P1c — QR Code Pix 3D — CONCLUÍDO (2026-04-17)
+
+Branch: `feat/qr-code` → main
+
+- Payload EMV BR Code estático 100% client-side, sem API de banco
+- Download STL (3D), SVG (laser/vetor), PNG (papel)
+- Pix copia-e-cola para o usuário validar no banco antes de imprimir
+- Toggle base/fundo, tipo de chave com normalização automática (+55)
+
+### ✅ P1d — Cortador + Carimbo com Potrace — CONCLUÍDO (2026-04-17)
+
+Branch: `fix/cutter-stamp-potrace` → main
+
+- Dois STLs separados: OpenSCAD (cortador) + Potrace (carimbo com detalhes)
+- Tolerância 0.4mm por lado garante encaixe físico após impressão FDM
+
+---
 
 Branch: `feat/potrace-stamp` → mergeado em main
 
@@ -277,17 +306,6 @@ Branch: `feat/potrace-stamp` → mergeado em main
 - **Parâmetros:** `text`, `subtext`, `shape`, `size_mm`, `border_style`, `hole_diameter`, `add_nfc`
 
 ---
-
-### Sprint 2b — P2 (gerador de QR Code)
-
-#### QR Code 3D
-- **Branch:** `feat/qr-code`
-- **Referência:** MakerWorld "QR Code Sign & Keychain" (477k views), Elo7 placas Pix best-seller BR
-- **Tecnologia:** `qrcode` (npm, 34M downloads/semana) → matriz N×N → `QrCodeGeometryBuilder` (Three.js InstancedMesh)
-- **Pipeline:** `string → QRCode.create() → Uint8Array → BoxGeometry por módulo escuro → STL`
-- **Tipos suportados:** URL/link, Pix (payload EMV BR Code), Wi-Fi (MECARD), WhatsApp, texto livre, vCard
-- **Parâmetros:** `qr_type: url|pix|wifi|whatsapp|text|vcard`, `content`, `module_size_mm`, `base_height`, `module_height`, `border_modules`
-- **Diferencial BR:** Suporte a Pix nativo — sem equivalente gratuito client-side no mercado
 
 ---
 
