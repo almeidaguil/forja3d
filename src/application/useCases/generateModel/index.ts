@@ -20,6 +20,46 @@ function extractDepth(values: Record<string, ParameterValue>): number {
   return 10
 }
 
+function normalizeQrType(value: ParameterValue | undefined): string {
+  if (value === 'Texto') return 'text'
+  if (value === 'Link') return 'url'
+  if (value === 'Wi-Fi') return 'wifi'
+  return typeof value === 'string' ? value : 'pix'
+}
+
+function normalizeWifiSecurity(value: ParameterValue | undefined): string {
+  if (value === 'Sem senha') return 'nopass'
+  return typeof value === 'string' ? value : 'WPA'
+}
+
+async function buildQrDownloadContent(opts: {
+  qrType: string
+  qrContent: string
+  qrPixKeyType: string
+  qrValue?: number
+  qrIdentifier?: string
+  qrDescription?: string
+}): Promise<string> {
+  if (opts.qrType === 'pix') {
+    const { buildPixPayload } = await import('../../../infrastructure/qr/PixPayloadBuilder')
+    return buildPixPayload({
+      key: opts.qrContent,
+      keyType: opts.qrPixKeyType as import('../../../infrastructure/qr/PixPayloadBuilder').PixKeyType,
+      value: opts.qrValue,
+      identifier: opts.qrIdentifier,
+      description: opts.qrDescription,
+    })
+  }
+  if (opts.qrType === 'wifi') {
+    const [ssid, password, security = 'WPA'] = opts.qrContent.split('|')
+    return `WIFI:T:${security};S:${ssid};P:${password};;`
+  }
+  if (opts.qrType === 'url') {
+    return opts.qrContent.startsWith('http') ? opts.qrContent : `https://${opts.qrContent}`
+  }
+  return opts.qrContent
+}
+
 export async function generateModel(
   model: Model,
   values: Record<string, ParameterValue>,
@@ -123,19 +163,30 @@ export async function generateModel(
 
   if (renderStrategy.type === 'three-qr') {
     if (!deps.qrBuilder) return { status: 'error', error: 'QrCodeGeometryBuilder não disponível.' }
-    if (!values.qrContent) return { status: 'error', error: 'Informe a chave Pix ou conteúdo do QR.' }
-
     const targetSize    = typeof values.targetSize    === 'number' ? values.targetSize    : 50
     const depth         = typeof values.depth         === 'number' ? values.depth         : 3
     const stampRelief   = typeof values.stampRelief   === 'number' ? values.stampRelief   : 1.5
-    const qrType        = typeof values.qrType        === 'string' ? values.qrType        : 'pix'
-    const qrContent     = typeof values.qrContent     === 'string' ? values.qrContent     : ''
+    const qrType        = normalizeQrType(values.qrType)
     const qrPixKeyType  = typeof values.qrPixKeyType  === 'string' ? values.qrPixKeyType  : 'email'
     const qrValue       = typeof values.qrValue       === 'number' && values.qrValue > 0 ? values.qrValue : undefined
     const qrIdentifier  = typeof values.qrIdentifier  === 'string' && values.qrIdentifier ? values.qrIdentifier : undefined
     const qrDescription = typeof values.qrDescription === 'string' && values.qrDescription ? values.qrDescription : undefined
-
     const qrShowBase = typeof values.qrShowBase === 'boolean' ? values.qrShowBase : true
+    const rawContent = typeof values.qrContent === 'string' ? values.qrContent.trim() : ''
+    const wifiSsid = typeof values.wifiSsid === 'string' ? values.wifiSsid.trim() : ''
+    const wifiPassword = typeof values.wifiPassword === 'string' ? values.wifiPassword : ''
+    const wifiSecurity = normalizeWifiSecurity(values.wifiSecurity)
+
+    if (qrType === 'wifi' && !wifiSsid) {
+      return { status: 'error', error: 'Informe o nome da rede Wi-Fi.' }
+    }
+    if (qrType !== 'wifi' && !rawContent) {
+      return { status: 'error', error: 'Informe o conteúdo do QR Code.' }
+    }
+
+    const qrContent = qrType === 'wifi'
+      ? `${wifiSsid}|${wifiPassword}|${wifiSecurity}`
+      : rawContent
 
     const geometry = await deps.qrBuilder.build({
       pathData: '', targetSize, depth, stampRelief,
@@ -144,10 +195,9 @@ export async function generateModel(
 
     // Also generate SVG and PNG for digital download
     const QRCode = await import('qrcode')
-    const { buildPixPayload } = await import('../../../infrastructure/qr/PixPayloadBuilder')
-    const content = qrType === 'pix'
-      ? buildPixPayload({ key: qrContent, keyType: qrPixKeyType as import('../../../infrastructure/qr/PixPayloadBuilder').PixKeyType, value: qrValue, identifier: qrIdentifier, description: qrDescription })
-      : qrContent
+    const content = await buildQrDownloadContent({
+      qrType, qrContent, qrPixKeyType, qrValue, qrIdentifier, qrDescription,
+    })
 
     const svgString  = await QRCode.toString(content, { type: 'svg', margin: 2 })
     const pngDataUrl = await QRCode.toDataURL(content, { margin: 2, width: 512 })
