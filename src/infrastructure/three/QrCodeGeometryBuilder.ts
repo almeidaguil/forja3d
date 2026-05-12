@@ -2,8 +2,7 @@ import * as THREE from 'three'
 import { STLExporter } from 'three/addons/exporters/STLExporter.js'
 import QRCode from 'qrcode'
 import type { ExtrudeConfig, IGeometryBuilder } from '../../application/ports/IGeometryBuilder'
-import { buildPixPayload } from '../qr/PixPayloadBuilder'
-import type { PixKeyType } from '../qr/PixPayloadBuilder'
+import { QrContentBuilder } from '../qr/QrContentBuilder'
 
 /**
  * Generates a 3D printable QR Code geometry.
@@ -14,6 +13,8 @@ import type { PixKeyType } from '../qr/PixPayloadBuilder'
  * Supports multiple QR types: Pix, Wi-Fi, URL, WhatsApp, vCard, plain text.
  */
 export class QrCodeGeometryBuilder implements IGeometryBuilder {
+  private readonly contentBuilder = new QrContentBuilder()
+
   async build(config: ExtrudeConfig): Promise<ArrayBuffer> {
     const {
       qrType = 'url',
@@ -32,7 +33,7 @@ export class QrCodeGeometryBuilder implements IGeometryBuilder {
     const content = this.buildContent({
       type: qrType as string,
       content: qrContent,
-      pixKeyType: qrPixKeyType as PixKeyType,
+      pixKeyType: qrPixKeyType,
       value: typeof qrValue === 'number' ? qrValue : undefined,
       identifier: typeof qrIdentifier === 'string' ? qrIdentifier : undefined,
       description: typeof qrDescription === 'string' ? qrDescription : undefined,
@@ -108,39 +109,11 @@ export class QrCodeGeometryBuilder implements IGeometryBuilder {
   private buildContent(opts: {
     type: string
     content: string
-    pixKeyType: PixKeyType
+    pixKeyType: string
     value?: number
     identifier?: string
     description?: string
   }): string {
-    switch (opts.type) {
-      case 'pix':
-        return buildPixPayload({
-          key: opts.content,
-          keyType: opts.pixKeyType,  // usa o tipo selecionado pelo usuário
-          value: opts.value,
-          identifier: opts.identifier,
-          description: opts.description,
-        })
-      case 'wifi':
-        // MECARD Wi-Fi format: WIFI:T:WPA;S:<ssid>;P:<password>;;
-        // content format: "ssid|password|WPA"
-        {
-          const [ssid, password, security = 'WPA'] = opts.content.split('|')
-          return `WIFI:T:${security};S:${ssid};P:${password};;`
-        }
-      case 'whatsapp':
-        // content = phone number (with or without country code)
-        {
-          const phone = opts.content.replace(/\D/g, '')
-          return `https://wa.me/${phone}`
-        }
-      case 'url':
-        // Ensure URL has protocol
-        return opts.content.startsWith('http') ? opts.content : `https://${opts.content}`
-      case 'text':
-      default:
-        return opts.content
-    }
+    return this.contentBuilder.build(opts)
   }
 }

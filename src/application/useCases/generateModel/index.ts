@@ -1,6 +1,8 @@
 import type { Model, ParameterValue, GenerationResult } from '../../../shared/types'
 import type { IImageTracer } from '../../ports/IImageTracer'
 import type { GeometryMode, IGeometryBuilder } from '../../ports/IGeometryBuilder'
+import type { IQrAssetExporter } from '../../ports/IQrAssetExporter'
+import type { IQrContentBuilder } from '../../ports/IQrContentBuilder'
 import { fillEnclosedRegions } from '../../services/imageProcessing'
 
 export interface GenerateModelDeps {
@@ -9,6 +11,8 @@ export interface GenerateModelDeps {
   heightmapBuilder?: IGeometryBuilder
   potraceBuilder?: IGeometryBuilder
   qrBuilder?: IGeometryBuilder
+  qrContentBuilder?: IQrContentBuilder
+  qrAssetExporter?: IQrAssetExporter
 }
 
 function extractDepth(values: Record<string, ParameterValue>): number {
@@ -30,34 +34,6 @@ function normalizeQrType(value: ParameterValue | undefined): string {
 function normalizeWifiSecurity(value: ParameterValue | undefined): string {
   if (value === 'Sem senha') return 'nopass'
   return typeof value === 'string' ? value : 'WPA'
-}
-
-async function buildQrDownloadContent(opts: {
-  qrType: string
-  qrContent: string
-  qrPixKeyType: string
-  qrValue?: number
-  qrIdentifier?: string
-  qrDescription?: string
-}): Promise<string> {
-  if (opts.qrType === 'pix') {
-    const { buildPixPayload } = await import('../../../infrastructure/qr/PixPayloadBuilder')
-    return buildPixPayload({
-      key: opts.qrContent,
-      keyType: opts.qrPixKeyType as import('../../../infrastructure/qr/PixPayloadBuilder').PixKeyType,
-      value: opts.qrValue,
-      identifier: opts.qrIdentifier,
-      description: opts.qrDescription,
-    })
-  }
-  if (opts.qrType === 'wifi') {
-    const [ssid, password, security = 'WPA'] = opts.qrContent.split('|')
-    return `WIFI:T:${security};S:${ssid};P:${password};;`
-  }
-  if (opts.qrType === 'url') {
-    return opts.qrContent.startsWith('http') ? opts.qrContent : `https://${opts.qrContent}`
-  }
-  return opts.qrContent
 }
 
 export async function generateModel(
@@ -163,6 +139,9 @@ export async function generateModel(
 
   if (renderStrategy.type === 'three-qr') {
     if (!deps.qrBuilder) return { status: 'error', error: 'QrCodeGeometryBuilder não disponível.' }
+    if (!deps.qrContentBuilder) return { status: 'error', error: 'QrContentBuilder não disponível.' }
+    if (!deps.qrAssetExporter) return { status: 'error', error: 'QrAssetExporter não disponível.' }
+
     const targetSize    = typeof values.targetSize    === 'number' ? values.targetSize    : 50
     const depth         = typeof values.depth         === 'number' ? values.depth         : 3
     const stampRelief   = typeof values.stampRelief   === 'number' ? values.stampRelief   : 1.5
@@ -193,14 +172,17 @@ export async function generateModel(
       qrType, qrContent, qrPixKeyType, qrValue, qrIdentifier, qrDescription, qrShowBase,
     })
 
-    // Also generate SVG and PNG for digital download
-    const QRCode = await import('qrcode')
-    const content = await buildQrDownloadContent({
-      qrType, qrContent, qrPixKeyType, qrValue, qrIdentifier, qrDescription,
+    const content = deps.qrContentBuilder.build({
+      type: qrType,
+      content: qrContent,
+      pixKeyType: qrPixKeyType,
+      value: qrValue,
+      identifier: qrIdentifier,
+      description: qrDescription,
     })
 
-    const svgString  = await QRCode.toString(content, { type: 'svg', margin: 2 })
-    const pngDataUrl = await QRCode.toDataURL(content, { margin: 2, width: 512 })
+    const svgString = await deps.qrAssetExporter.toSvg(content)
+    const pngDataUrl = await deps.qrAssetExporter.toPngDataUrl(content)
 
     // pixCopiaCola allows the user to paste the payload in their bank app to test before printing
     const pixCopiaCola = qrType === 'pix' ? content : undefined

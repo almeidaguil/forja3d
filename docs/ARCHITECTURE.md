@@ -65,6 +65,8 @@ Portas atuais:
 |---|---|---|
 | `IGeometryBuilder` | `application/ports/IGeometryBuilder.ts` | Gera um `ArrayBuffer` STL a partir de uma configuração de geometria |
 | `IImageTracer` | `application/ports/IImageTracer.ts` | Converte `ImageData` em `pathData` vetorial |
+| `IQrContentBuilder` | `application/ports/IQrContentBuilder.ts` | Monta o conteúdo final de QR para link, texto, Wi-Fi, WhatsApp e Pix |
+| `IQrAssetExporter` | `application/ports/IQrAssetExporter.ts` | Exporta conteúdo de QR para SVG e PNG |
 | `IOpenScadRenderer` | `application/ports/IOpenScadRenderer.ts` | Contrato legado para renderização OpenSCAD |
 
 Casos de uso:
@@ -89,6 +91,8 @@ Implementa renderização, vetorização e geração de payloads.
 | `PotraceStampBuilder` | Potrace WASM + Three.js | Carimbo com detalhes vetoriais |
 | `HeightmapStampBuilder` | Three.js | Builder legado para carimbo heightmap |
 | `QrCodeGeometryBuilder` | qrcode + Three.js | QR Code Pix e QR Code genérico |
+| `QrContentBuilder` | TypeScript puro + PixPayloadBuilder | Conteúdo final para QR Code digital e geométrico |
+| `QrAssetExporter` | qrcode | SVG e PNG para QR Codes |
 | `PixPayloadBuilder` | TypeScript puro | Payload EMV BR Code Pix |
 | `SvgStampBuilder` | Three.js | Builder legado |
 | `ThreeGeometryBuilder` | Three.js | Builder legado |
@@ -176,6 +180,7 @@ O roteador usa `basename` derivado de `import.meta.env.BASE_URL`, mantendo compa
 |---|---|---|
 | Camada `domain/` física ausente | Tipos de domínio vivem em `src/shared/types/` | Criar `src/domain/` apenas quando houver regras puras suficientes |
 | `presentation` importa `infrastructure` | Resolvido com `src/app/dependencies.ts` e injeção em `ModelEditor` | Manter novos adapters fora de `presentation` |
+| `application` importava infraestrutura/lib de QR | Resolvido com `IQrContentBuilder` e `IQrAssetExporter` | Manter geração concreta de QR em `infrastructure/qr` |
 | `IOpenScadRenderer` pouco usado | O builder atual implementa `IGeometryBuilder` | Remover ou adaptar quando a renderização server-side da V2 for definida |
 | Catálogo importado direto | `src/data/index.ts` exporta JSONs diretamente | Introduzir `IModelRepository` antes da V2 |
 
@@ -188,6 +193,7 @@ O roteador usa `basename` derivado de `import.meta.env.BASE_URL`, mantendo compa
 | [0003](adr/0003-three-extrude-for-images.md) | Three.js ExtrudeGeometry para modelos baseados em imagem |
 | [0004](adr/0004-canvas-tracer-v1.md) | Canvas tracer para cortador e Potrace para carimbo |
 | [0005](adr/0005-root-dependency-injection.md) | Composição de dependências na raiz da aplicação |
+| [0006](adr/0006-qr-content-and-assets-ports.md) | Ports para conteúdo e assets de QR Code |
 
 ## Regras de Evolução
 

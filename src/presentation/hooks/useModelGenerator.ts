@@ -62,13 +62,7 @@ export function useModelGenerator(
       let imageData: ImageData | undefined
       if (imageFile) imageData = await fileToImageData(imageFile)
 
-      const result = await generateModel(model, values, imageData, {
-        imageTracer: deps.imageTracer,
-        geometryBuilder: deps.geometryBuilder,
-        heightmapBuilder: deps.heightmapBuilder,
-        potraceBuilder: deps.potraceBuilder,
-        qrBuilder: deps.qrBuilder,
-      })
+      const result = await generateModel(model, values, imageData, deps)
 
       if (result.status === 'success' && result.geometry) {
         setStlBuffer(result.geometry)
