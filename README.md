@@ -1,85 +1,111 @@
 # Forja3D
 
-**Forja3D** é um gerador de modelos 3D paramétricos que roda diretamente no navegador. Sem instalação, sem cadastro — tudo funciona no cliente.
+**Forja3D** é um gerador de modelos 3D paramétricos que roda diretamente no navegador. A V1 é estática, não exige cadastro e gera arquivos localmente no cliente.
+
+Site ao vivo: https://almeidaguil.github.io/forja3d/
 
 ## O que faz
 
-O Forja3D permite criar modelos 3D personalizados e prontos para impressão, ajustando parâmetros ou enviando imagens. Baixe o arquivo `.stl` e envie direto para o seu fatiador.
+O Forja3D permite criar modelos 3D personalizados para impressão, ajustando parâmetros ou enviando imagens. A aplicação renderiza um preview 3D e libera downloads em STL, SVG ou PNG conforme o modelo.
 
 ### Modelos disponíveis
 
-| Modelo | Descrição |
-|---|---|
-| **Cortador de Biscoito** | Envie qualquer imagem e gere um cortador a partir do contorno. Suporta modo Cortador ou Cortador + Carimbo (dois STLs). |
-| **Carimbo** | Converta uma imagem em carimbo 3D com relevo real — olhos, nariz e detalhes internos preservados via Potrace. |
-| **Chaveiro com Texto** | Chaveiro personalizado com 1 ou 2 linhas de texto, 19 fontes, borda decorativa, 3 formatos e slot NFC opcional. |
-| **QR Code Pix** | Gere um QR Code Pix 3D para placa ou mesa. O cliente escaneia e paga direto pelo app do banco. Download em STL, SVG e PNG. |
+| Modelo | Descrição | Saídas |
+|---|---|---|
+| Cortador de Biscoito | Gera um cortador a partir do contorno de uma imagem. O modo Cortador + Carimbo entrega duas peças com tolerância para encaixe. | STL |
+| Carimbo | Converte imagem em carimbo 3D com detalhes internos preservados por Potrace. | STL |
+| Chaveiro com Texto | Cria chaveiro com 1 ou 2 linhas, formato retangular, retangular arredondado ou oval, fonte local e slot NFC opcional. | STL |
+| QR Code Pix | Gera QR Code Pix 3D com payload EMV BR Code client-side e texto copia-e-cola para validação. | STL, SVG, PNG |
+| QR Code | Gera QR Code 3D genérico para link, texto ou rede Wi-Fi. | STL, SVG, PNG |
 
 ### Funcionalidades
 
-- **Imagem para 3D:** envie um PNG ou JPG — contorno extraído automaticamente para cortadores e carimbos
-- **Carimbo detalhado:** Potrace vetoriza a imagem, preservando olhos, nariz e detalhes como relevo 3D real
-- **19 fontes incluídas:** sans-serif, display e cursivas — picker visual mostra cada nome na própria fonte
-- **QR Code Pix:** payload EMV BR Code gerado 100% no cliente, sem API de banco. Mostra o "copia-e-cola" para validar antes de imprimir
-- **Preview 3D em tempo real:** veja o modelo renderizado antes de baixar
-- **Download múltiplo:** STL (impressão 3D), SVG (laser/vetor) e PNG (papel) — dependendo do modelo
-- **Sem backend:** toda a renderização roda no cliente via WebAssembly e Three.js
-- **Exportação STL:** arquivos `.stl` compatíveis com Cura, PrusaSlicer e qualquer fatiador
+- Upload de imagens PNG, JPG ou WEBP até 5 MB para cortadores e carimbos.
+- Preview 3D com Three.js e controles de órbita.
+- Download de STL para impressão 3D.
+- Download de SVG e PNG para modelos de QR Code.
+- Pix copia-e-cola para testar o QR Code Pix no app do banco antes de imprimir.
+- 19 fontes TTF locais para o chaveiro com texto, sem dependência de CDN no OpenSCAD.
+- Build e deploy estáticos no GitHub Pages.
 
 ## Stack técnica
 
-- [React 19](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/) — camada de UI
-- [Vite](https://vitejs.dev/) — build e servidor de desenvolvimento
-- [Three.js](https://threejs.org/) — preview 3D e builders de geometria
-- [OpenSCAD WASM](https://openscad.org/) — renderização paramétrica no navegador (cortador, chaveiro, QR Code)
-- [Potrace](https://potrace.sourceforge.net/) — vetorização de imagens para carimbos com relevo real
-- [Tailwind CSS v4](https://tailwindcss.com/) — estilização
-- [GitHub Pages](https://pages.github.com/) — hospedagem estática
+- React 19 + TypeScript 6
+- Vite 8
+- Tailwind CSS v4
+- Three.js
+- OpenSCAD WASM
+- Potrace
+- qrcode
+- GitHub Actions + GitHub Pages
 
 ## Arquitetura
 
-O projeto segue **Arquitetura Limpa** + **Domain-Driven Design**:
+O projeto segue uma arquitetura em camadas. Na V1 atual, os tipos de domínio ficam em `src/shared/types/` e os casos de uso ficam em `src/application/`.
 
-```
+```text
 src/
-├── domain/           # Entidades e lógica de negócio pura
-├── application/      # Casos de uso e ports (interfaces)
-├── infrastructure/   # Adaptadores: OpenSCAD WASM, Three.js, Potrace, QR
-├── presentation/     # Componentes React, páginas, hooks
-└── shared/           # Tipos e constantes globais
+├── application/      # Casos de uso, portas e serviços
+├── infrastructure/   # Adaptadores: OpenSCAD WASM, Three.js, Potrace, QR, Canvas
+├── presentation/     # Componentes React, páginas e hooks
+├── shared/           # Tipos e constantes compartilhadas
+└── data/             # Catálogo estático de modelos JSON
 ```
 
-Veja [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) para a documentação arquitetural completa.
+Veja [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) para detalhes, incluindo dívidas técnicas conhecidas da V1.
 
 ## Rodando localmente
 
 ```bash
-# Instalar dependências
 npm install
-
-# Iniciar servidor de desenvolvimento
 npm run dev
-
-# Build para produção
-npm run build
 ```
 
-Veja o [Guia de Instalação](docs/SETUP.md) para instruções detalhadas.
+Acesse: http://localhost:5173/forja3d/
+
+Para validar produção localmente:
+
+```bash
+npm run build
+npm run preview
+```
+
+## Qualidade
+
+Antes de qualquer commit:
+
+```bash
+npm run build
+npm run lint
+```
+
+O projeto usa Husky, lint-staged e commitlint. Commits devem seguir Conventional Commits em português, por exemplo:
+
+```text
+docs(readme): atualizar documentação dos modelos
+```
 
 ## Deploy
 
-Publicado automaticamente no [GitHub Pages](https://almeidaguil.github.io/forja3d/) a cada push na `main` via GitHub Actions.
+O deploy de produção acontece automaticamente no GitHub Pages a cada push na `main`, via [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml).
 
-## Fluxo de branches
+Fluxo esperado:
 
-| Branch | Finalidade |
+```text
+branch de trabalho → PR para develop → PR de develop para main → deploy automático
+```
+
+`main` e `develop` não recebem commit ou merge local direto.
+
+## Documentação
+
+| Arquivo | Uso |
 |---|---|
-| `main` | Estável, pronto para produção. Protegida. |
-| `develop` | Integração — branches de feature são mergeadas aqui antes de ir para main. |
-| `feature/<nome>` | Novas funcionalidades |
-| `fix/<nome>` | Correções de bugs |
-
-Todos os commits seguem [Conventional Commits](https://www.conventionalcommits.org/).
+| [docs/PLANO.md](docs/PLANO.md) | Estado atual, histórico e próximos passos |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Camadas, ports, adaptadores e ADRs |
+| [docs/SETUP.md](docs/SETUP.md) | Instalação, comandos e fluxo de PR |
+| [docs/V2_ROADMAP.md](docs/V2_ROADMAP.md) | Plano de evolução para backend, auth, créditos e pagamentos |
+| [AGENTS.md](AGENTS.md) | Regras para agentes de IA trabalhando no projeto |
 
 ## Licença
 

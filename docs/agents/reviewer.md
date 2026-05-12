@@ -26,8 +26,9 @@
 ## Checklist completo de revisão
 
 ### Arquitetura
-- [ ] Nenhum import de `infrastructure/` dentro de `presentation/`, `application/` ou `domain/`
-- [ ] Nenhum import de React, Three.js ou libs externas dentro de `domain/`
+- [ ] Nenhum import de `infrastructure/` dentro de `application/` ou `domain/`
+- [ ] Imports de `infrastructure/` dentro de `presentation/` estão restritos à composição atual em `useModelGenerator` ou são reportados como dívida técnica
+- [ ] Se `src/domain/` existir, nenhum import de React, Three.js ou libs externas dentro de `domain/`
 - [ ] Nenhum import de React ou Three.js dentro de `application/`
 - [ ] Toda nova interface (port) tem ADR em `docs/adr/`
 - [ ] Casos de uso apenas orquestram — regras de negócio ficam no domain

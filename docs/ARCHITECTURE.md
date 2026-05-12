@@ -1,240 +1,200 @@
 # Arquitetura — Forja3D
 
-## Visão geral
+## Visão Geral
 
-O Forja3D segue os princípios de **Clean Architecture** (Robert C. Martin) combinados com **Domain-Driven Design**. O objetivo é uma base de código onde as regras de negócio são independentes de frameworks de UI, bibliotecas de renderização e restrições de hospedagem.
+O Forja3D V1 é uma aplicação React estática que gera modelos 3D no navegador. A arquitetura usa camadas para separar casos de uso, adaptadores de renderização e interface.
 
----
+A intenção arquitetural é Clean Architecture. O estado real da V1 ainda possui algumas dívidas técnicas documentadas neste arquivo, principalmente na fronteira entre `presentation` e `infrastructure`.
 
-## Diagrama de camadas
+## Camadas Atuais
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  Presentation (React, Three.js canvas, Tailwind)                │
-│  ┌─────────────────────────────────────────────────────────┐    │
-│  │  Application (Use Cases)                                │    │
-│  │  ┌─────────────────────────────────────────────────┐    │    │
-│  │  │  Domain (Entities, Value Objects, Interfaces)   │    │    │
-│  │  └─────────────────────────────────────────────────┘    │    │
-│  │  Infrastructure (WASM, Three.js, Canvas, File I/O)      │    │
-│  └─────────────────────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-Regra de dependência: **as setas apontam apenas para dentro**. As camadas internas não conhecem as camadas externas.
-
----
-
-## Camada de domínio (`src/domain/`)
-
-O coração da aplicação. Contém TypeScript puro — sem framework, sem importações de bibliotecas externas.
-
-### Entidades e objetos de valor principais
-
-#### `Model`
-Representa um template de modelo 3D gerado.
-
-```typescript
-interface Model {
-  id: string
-  slug: string
-  title: string
-  category: ModelCategory
-  parameters: ParameterSchema[]
-  renderStrategy: RenderStrategy
-}
+```text
+src/
+├── application/
+│   ├── ports/
+│   ├── services/
+│   └── useCases/
+├── infrastructure/
+│   ├── openscad/
+│   ├── qr/
+│   ├── three/
+│   └── tracer/
+├── presentation/
+│   ├── components/
+│   ├── hooks/
+│   └── pages/
+├── shared/
+│   ├── constants/
+│   └── types/
+└── data/
+    └── models/
 ```
 
-#### `Parameter`
-Descreve uma única entrada configurável de um modelo.
+### `src/shared/`
 
-```typescript
-type ParameterType = 'string' | 'number' | 'boolean' | 'select' | 'color' | 'image'
+Contém tipos e constantes usados por todas as camadas.
 
-interface ParameterSchema {
-  key: string
-  type: ParameterType
-  label: string
-  default: ParameterValue
-  min?: number        // para 'number'
-  max?: number        // para 'number'
-  step?: number       // para 'number'
-  options?: string[]  // para 'select'
-}
-```
+Tipos principais em `src/shared/types/index.ts`:
 
-#### `GenerationResult`
-Resultado retornado por qualquer caso de uso de geração.
+- `Model`
+- `ParameterSchema`
+- `RenderStrategy`
+- `GenerationResult`
+- `ModelCategory`
 
-```typescript
-interface GenerationResult {
-  status: 'success' | 'error'
-  geometry?: ArrayBuffer  // dados STL binários
-  error?: string
-}
-```
+`Model.creditsRequired` já existe para preparar a V2. Na V1, os modelos usam `1`.
 
-#### `RenderStrategy`
-União discriminada que informa à camada de aplicação qual renderizador utilizar.
+### `src/data/`
 
-```typescript
-type RenderStrategy =
-  | { type: 'openscad'; scadTemplate: string }
-  | { type: 'three-extrude'; svgSource: 'image' | 'builtin'; builtinShape?: BuiltinShape }
-```
+Contém o catálogo estático da V1. `src/data/index.ts` importa os JSONs e exporta:
 
----
+- `models`
+- `getModelBySlug(slug)`
 
-## Camada de aplicação (`src/application/`)
+Modelos atuais:
 
-Contém os casos de uso. Cada caso de uso é uma classe ou função com um contrato claro de entrada/saída. Sem React, sem UI.
-
-### Casos de uso
-
-#### `generateModel`
-Despacha para o renderizador correto com base na `RenderStrategy` do modelo.
-- Chama `IOpenScadRenderer` para a estratégia `openscad`
-- Chama `IThreeGeometryBuilder` para a estratégia `three-extrude`
-
-#### `traceImage`
-Recebe um arquivo de imagem bruto, executa pelo traçador de imagem e retorna uma string de caminho SVG.
-- Chama a porta `IImageTracer`
-
-#### `exportStl`
-Recebe uma `BufferGeometry` do Three.js e retorna um `ArrayBuffer` binário STL.
-- Chama a porta `IStlExporter`
-
-### Portas (interfaces definidas aqui, implementadas na infraestrutura)
-
-```typescript
-interface IOpenScadRenderer {
-  compile(scadCode: string): Promise<ArrayBuffer>
-}
-
-interface IImageTracer {
-  trace(imageData: ImageData): Promise<string>  // retorna string de caminho SVG
-}
-
-interface IThreeGeometryBuilder {
-  buildFromSvgPath(path: string, params: ExtrudeParams): BufferGeometry
-  buildFromScad(scadCode: string): Promise<BufferGeometry>
-}
-
-interface IStlExporter {
-  export(geometry: BufferGeometry): ArrayBuffer
-}
-```
-
----
-
-## Camada de infraestrutura (`src/infrastructure/`)
-
-Implementa as portas. Tem conhecimento de bibliotecas externas (Three.js, OpenSCAD WASM, Canvas API).
-
-### Adaptadores
-
-| Adaptador | Porta | Tecnologia | Modelos |
-|---|---|---|---|
-| `OpenScadGeometryBuilder` | `IGeometryBuilder` | `openscad-wasm-prebuilt` (WASM) | Cortador, Chaveiro, template SCAD |
-| `PotraceStampBuilder` | `IGeometryBuilder` | `potrace` + Three.js | Carimbo (detalhes reais) |
-| `QrCodeGeometryBuilder` | `IGeometryBuilder` | `qrcode` + Three.js | QR Code Pix |
-| `HeightmapStampBuilder` | `IGeometryBuilder` | Three.js | Legado — heightmap flat |
-| `CanvasImageTracer` | `IImageTracer` | Canvas API + Moore-Neighbor 4-conn | Extração de contorno para cortador |
-| `ThreeGeometryBuilder` | `IGeometryBuilder` | Three.js `ExtrudeGeometry` | Legado |
-
-### Serviços de aplicação
-
-- **`src/application/services/imageProcessing.ts`**: `fillEnclosedRegions()` — flood-fill BFS que converte imagens de contorno em silhuetas sólidas antes do rastreamento. Usado pelo cortador antes de passar para o tracer.
-
-### Estratégia de rastreamento e geração de geometria
-
-**Cortador de biscoito:**
-1. `fillEnclosedRegions(imageData, threshold)` — preenche interior da forma
-2. `CanvasImageTracer.trace()` — Moore-Neighbor 4-conectividade → path SVG
-3. `OpenScadGeometryBuilder.build()` — path → SCAD → WASM → STL
-
-**Carimbo (detalhes reais):**
-1. `PotraceStampBuilder.build()` — imageData → Potrace multi-path → Three.js ExtrudeGeometry com holes → STL
-
-**Chaveiro com Texto:**
-1. `OpenScadGeometryBuilder.buildFromTemplate('keychain', params)` — template SCAD parametrizado, fontes TTF de `public/fonts/`
-
-**QR Code Pix:**
-1. `buildPixPayload()` — gera payload EMV BR Code (100% client-side)
-2. `QrCodeGeometryBuilder.build()` — matriz QR → Three.js BoxGeometry por módulo → STL
-
-### Fontes tipográficas
-
-19 fontes TTF em `public/fonts/` (servidas como assets estáticos, sem CDN). Usadas pelo OpenScadGeometryBuilder via Emscripten FS. Script de download: `scripts/download-fonts.mjs`.
-
----
-
-## Camada de apresentação (`src/presentation/`)
-
-Componentes React e hooks. Os componentes são "burros" — recebem dados e disparam eventos. Toda a lógica vive nos hooks, que chamam os casos de uso da aplicação.
-
-### Hooks principais
-
-- `useModelGenerator(model, params)` — chama o caso de uso `generateModel`, gerencia estado de carregamento/erro
-- `useImageTracer(file)` — chama o caso de uso `traceImage`, retorna o caminho SVG
-- `useModelViewer(geometry)` — inicializa a cena Three.js, atualiza a geometria
-
-### Regras de componentes
-
-- Componentes renderizam apenas o que os hooks fornecem
-- Nenhuma importação de caso de uso dentro de arquivos `.tsx`
-- O canvas Three.js é encapsulado no componente `ModelViewer` com sua própria lógica imperativa via ref
-
----
-
-## Camada de dados (`src/data/models/`)
-
-Arquivos JSON, um por tipo de modelo. Definem os metadados do modelo, os esquemas de parâmetros e a estratégia de renderização. Esta é a fonte de verdade para quais modelos existem e como se comportam.
-
-Exemplo (`cookie-cutter.json`):
-
-```json
-{
-  "id": "cookie-cutter",
-  "slug": "cookie-cutter",
-  "title": "Cookie Cutter",
-  "category": "cutters",
-  "renderStrategy": {
-    "type": "three-extrude",
-    "svgSource": "image"
-  },
-  "parameters": [
-    { "key": "cutterHeight", "type": "number", "label": "Height (mm)", "default": 20, "min": 10, "max": 50, "step": 1 },
-    { "key": "wallThickness", "type": "number", "label": "Wall thickness (mm)", "default": 2, "min": 1, "max": 5, "step": 0.5 },
-    { "key": "outlineOffset", "type": "number", "label": "Outline offset (mm)", "default": 3, "min": 0, "max": 10, "step": 0.5 },
-    { "key": "color", "type": "color", "label": "Preview color", "default": "#e07b54" }
-  ]
-}
-```
-
----
-
-## Architecture Decision Records (ADRs)
-
-Armazenados em `docs/adr/`. Formato: `NNNN-titulo.md`.
-
-| # | Decisão | Status |
+| Arquivo | Slug | Estratégia |
 |---|---|---|
-| [0001](adr/0001-client-side-only.md) | Toda renderização é client-side (sem backend na V1) | Aceito |
-| [0002](adr/0002-openscad-wasm.md) | Usar OpenSCAD WASM para modelos paramétricos de texto/geometria | Aceito |
-| [0003](adr/0003-three-extrude-for-images.md) | Usar Three.js ExtrudeGeometry para modelos baseados em imagem | Aceito |
-| [0004](adr/0004-canvas-tracer-v1.md) | Canvas API para cortador; Potrace para carimbo com detalhes | **Atualizado** — Potrace adotado para stamp (P1a) |
-| 0005 | QR Code Pix gerado 100% client-side via payload EMV BR Code | Aceito |
-| 0006 | Fontes TTF em `public/fonts/` (sem CDN) para OpenSCAD WASM | Aceito |
+| `cookie-cutter.json` | `cookie-cutter` | `three-extrude` com imagem |
+| `stamp.json` | `stamp` | `potrace-stamp` |
+| `keychain.json` | `keychain` | `openscad` com template `keychain` |
+| `qr-pix.json` | `qr-pix` | `three-qr` |
+| `qr-code.json` | `qr-code` | `three-qr` |
 
----
+### `src/application/`
 
-## Restrições tecnológicas
+Contém os contratos e casos de uso.
+
+Portas atuais:
+
+| Porta | Arquivo | Função |
+|---|---|---|
+| `IGeometryBuilder` | `application/ports/IGeometryBuilder.ts` | Gera um `ArrayBuffer` STL a partir de uma configuração de geometria |
+| `IImageTracer` | `application/ports/IImageTracer.ts` | Converte `ImageData` em `pathData` vetorial |
+| `IOpenScadRenderer` | `application/ports/IOpenScadRenderer.ts` | Contrato legado para renderização OpenSCAD |
+
+Casos de uso:
+
+| Caso de uso | Arquivo | Responsabilidade |
+|---|---|---|
+| `generateModel` | `application/useCases/generateModel/index.ts` | Despacha a geração conforme `renderStrategy` |
+| `exportStl` | `application/useCases/exportStl/index.ts` | Dispara download de STL a partir de `ArrayBuffer` |
+
+Serviços:
+
+- `fillEnclosedRegions(imageData, threshold)`: preenche regiões internas antes de rastrear o contorno do cortador.
+
+### `src/infrastructure/`
+
+Implementa renderização, vetorização e geração de payloads.
+
+| Adaptador | Tecnologia | Uso |
+|---|---|---|
+| `OpenScadGeometryBuilder` | OpenSCAD WASM | Cortador e chaveiro com texto |
+| `CanvasImageTracer` | Canvas API | Contorno 4-conectado para cortador |
+| `PotraceStampBuilder` | Potrace + Three.js | Carimbo com detalhes vetoriais |
+| `HeightmapStampBuilder` | Three.js | Builder legado para carimbo heightmap |
+| `QrCodeGeometryBuilder` | qrcode + Three.js | QR Code Pix e QR Code genérico |
+| `PixPayloadBuilder` | TypeScript puro | Payload EMV BR Code Pix |
+| `SvgStampBuilder` | Three.js | Builder legado |
+| `ThreeGeometryBuilder` | Three.js | Builder legado |
+
+### `src/presentation/`
+
+Contém React, UI e estado de tela.
+
+Páginas:
+
+- `Home`: lista modelos por categoria.
+- `ModelEditor`: exibe formulário, upload de imagem, preview 3D e downloads.
+
+Componentes principais:
+
+- `ModelCard`
+- `ParameterForm`
+- `ThreePreview`
+- `Button`
+- `Badge`
+
+Hooks:
+
+- `useParameterForm`
+- `useModelGenerator`
+
+`App.tsx` usa um roteamento local por `useState`, com páginas `home` e `editor`.
+
+## Fluxos de Geração
+
+### Cortador de Biscoito
+
+1. Usuário envia imagem.
+2. `fillEnclosedRegions` preenche regiões internas.
+3. `CanvasImageTracer` extrai `pathData`.
+4. `OpenScadGeometryBuilder` gera STL.
+5. No modo Cortador + Carimbo, `PotraceStampBuilder` também gera um segundo STL para o carimbo.
+
+### Carimbo
+
+1. Usuário envia imagem.
+2. `PotraceStampBuilder` vetoriza com Potrace.
+3. Three.js gera geometria extrudada.
+4. O STL é baixado pelo navegador.
+
+### Chaveiro com Texto
+
+1. Usuário informa texto, formato, fonte e dimensões.
+2. `OpenScadGeometryBuilder` monta o template SCAD.
+3. A fonte TTF é carregada de `public/fonts/`.
+4. OpenSCAD WASM compila STL no cliente.
+
+### QR Code Pix
+
+1. `PixPayloadBuilder` gera payload EMV BR Code.
+2. `QrCodeGeometryBuilder` transforma a matriz QR em geometria 3D.
+3. O caso de uso também gera SVG e PNG com `qrcode`.
+4. A UI mostra o Pix copia-e-cola para validação.
+
+### QR Code Genérico
+
+1. Usuário escolhe link, texto ou Wi-Fi.
+2. `generateModel` normaliza o conteúdo.
+3. `QrCodeGeometryBuilder` gera STL.
+4. `qrcode` gera SVG e PNG.
+
+## Restrições da V1
 
 | Restrição | Motivo |
 |---|---|
-| Sem backend na V1 | Hospedado no GitHub Pages (apenas estático) |
-| Sem autenticação na V1 | Uso pessoal, sem necessidade de gerenciamento de usuários |
-| Sem exportação 3MF na V1 | STL é suficiente; 3MF é uma preocupação da V2 |
-| Sem i18n na V1 | Idioma único (PT-BR); i18n é uma preocupação da V2 |
-| Sem pagamento na V1 | Apenas uso pessoal; integração com Stripe é V2 |
+| Sem backend | GitHub Pages hospeda apenas arquivos estáticos |
+| Sem autenticação | V1 é uma ferramenta local/client-side |
+| Sem banco de dados | Catálogo vem de JSON estático |
+| Sem pagamentos | Créditos e Stripe são escopo da V2 |
+| Sem analytics | Rastreamento entra apenas na V2 |
+| Exportação principal em STL | 3MF fica para a V2 |
+
+## Dívidas Técnicas Conhecidas
+
+| Dívida | Estado atual | Direção |
+|---|---|---|
+| Camada `domain/` física ausente | Tipos de domínio vivem em `src/shared/types/` | Criar `src/domain/` apenas quando houver regras puras suficientes |
+| `presentation` importa `infrastructure` | `useModelGenerator` instancia adaptadores diretamente | Mover composição para uma raiz/injeção de dependências |
+| Roteamento por `useState` | URLs não representam a página atual | Adicionar React Router em branch própria |
+| `IOpenScadRenderer` pouco usado | O builder atual implementa `IGeometryBuilder` | Remover ou adaptar quando a renderização server-side da V2 for definida |
+| Catálogo importado direto | `src/data/index.ts` exporta JSONs diretamente | Introduzir `IModelRepository` antes da V2 |
+
+## ADRs
+
+| ADR | Decisão |
+|---|---|
+| [0001](adr/0001-client-side-only.md) | Toda renderização é client-side na V1 |
+| [0002](adr/0002-openscad-wasm.md) | OpenSCAD WASM para modelos paramétricos |
+| [0003](adr/0003-three-extrude-for-images.md) | Three.js ExtrudeGeometry para modelos baseados em imagem |
+| [0004](adr/0004-canvas-tracer-v1.md) | Canvas tracer para cortador e Potrace para carimbo |
+
+## Regras de Evolução
+
+- Código de domínio e aplicação não deve depender de React.
+- Adaptadores externos ficam em `infrastructure`.
+- Componentes React ficam em `presentation`.
+- Novos modelos entram primeiro em JSON estático na V1.
+- Implicações de auth, créditos, backend, Stripe, storage ou analytics devem ser registradas em [V2_ROADMAP.md](V2_ROADMAP.md).

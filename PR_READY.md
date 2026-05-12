@@ -1,40 +1,25 @@
-# ✅ Tudo Pronto! Clique para Criar PR
+# Checklist de PR
 
-## Status
-- ✅ Código implementado e testado
-- ✅ Build: OK | Lint: OK | TypeScript: OK  
-- ✅ Branch: `feature/parameter-form-image-field` — updated & ready
-- ⏳ **PR: PRONTA PARA 1 CLIQUE**
+Use este arquivo para conferir se a branch está pronta antes de abrir PR.
 
----
+## Validação Local
 
-## 🚀 CRIAR PR AGORA (5 segundos)
-
-**Clique aqui:**
-👉 https://github.com/almeidaguil/forja3d/compare/develop...feature/parameter-form-image-field
-
-Depois:
-1. Click no botão verde **"Create pull request"**
-2. Pronto! ✅
-
-O título e descrição já virão pré-preenchidos.
-
----
-
-## O que a PR incluirá
-- ✅ ImageField para upload de imagens (PNG/JPG/WEBP, max 5MB)
-- ✅ Integração com ModelEditor
-- ✅ Documentação atualizada
-- ✅ Build validado
-
----
-
-## Depois de aprovar/mergear
 ```bash
-git branch -d feature/parameter-form-image-field
-git push origin --delete feature/parameter-form-image-field
+npm run build
+npm run lint
+git status --short --branch
 ```
 
----
+## Conteúdo da PR
 
-**Próximo:** ThreePreview (canvas 3D com OrbitControls)
+- [ ] O escopo da mudança está claro.
+- [ ] A documentação foi atualizada quando necessário.
+- [ ] Não há commits diretamente em `main` ou `develop`.
+- [ ] Não há arquivos temporários ou logs versionados.
+- [ ] A descrição do PR explica o que mudou e como validar.
+
+## Destino
+
+Toda branch de trabalho abre PR para `develop`.
+
+Produção usa PR separado de `develop` para `main`, seguido de deploy automático no GitHub Pages.
