@@ -3,6 +3,8 @@ import { OpenScadGeometryBuilder } from '../infrastructure/openscad/OpenScadGeom
 import { HeightmapStampBuilder } from '../infrastructure/three/HeightmapStampBuilder'
 import { PotraceStampBuilder } from '../infrastructure/three/PotraceStampBuilder'
 import { QrCodeGeometryBuilder } from '../infrastructure/three/QrCodeGeometryBuilder'
+import { QrAssetExporter } from '../infrastructure/qr/QrAssetExporter'
+import { QrContentBuilder } from '../infrastructure/qr/QrContentBuilder'
 import type { GenerateModelDeps } from '../application/useCases/generateModel'
 
 export interface AppDependencies {
@@ -17,6 +19,8 @@ export function createAppDependencies(): AppDependencies {
       heightmapBuilder: new HeightmapStampBuilder(),
       potraceBuilder: new PotraceStampBuilder(),
       qrBuilder: new QrCodeGeometryBuilder(),
+      qrContentBuilder: new QrContentBuilder(),
+      qrAssetExporter: new QrAssetExporter(),
     },
   }
 }
