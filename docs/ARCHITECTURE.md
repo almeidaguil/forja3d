@@ -121,7 +121,9 @@ Hooks:
 - `useParameterForm`
 - `useModelGenerator`
 
-`App.tsx` usa um roteamento local por `useState`, com páginas `home` e `editor`.
+`App.tsx` usa React Router com `BrowserRouter`, `Routes`, `Route` e `Navigate`.
+O roteador usa `basename` derivado de `import.meta.env.BASE_URL`, mantendo compatibilidade com `/forja3d/`.
+`public/404.html` preserva deep links do GitHub Pages e redireciona para o SPA.
 
 ## Fluxos de Geração
 
@@ -178,7 +180,6 @@ Hooks:
 |---|---|---|
 | Camada `domain/` física ausente | Tipos de domínio vivem em `src/shared/types/` | Criar `src/domain/` apenas quando houver regras puras suficientes |
 | `presentation` importa `infrastructure` | `useModelGenerator` instancia adaptadores diretamente | Mover composição para uma raiz/injeção de dependências |
-| Roteamento por `useState` | URLs não representam a página atual | Adicionar React Router em branch própria |
 | `IOpenScadRenderer` pouco usado | O builder atual implementa `IGeometryBuilder` | Remover ou adaptar quando a renderização server-side da V2 for definida |
 | Catálogo importado direto | `src/data/index.ts` exporta JSONs diretamente | Introduzir `IModelRepository` antes da V2 |
 

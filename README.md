@@ -27,10 +27,12 @@ O Forja3D permite criar modelos 3D personalizados para impressão, ajustando par
 - Pix copia-e-cola para testar o QR Code Pix no app do banco antes de imprimir.
 - 19 fontes TTF locais para o chaveiro com texto, sem dependência de CDN no OpenSCAD.
 - Build e deploy estáticos no GitHub Pages.
+- Links diretos para cada editor de modelo.
 
 ## Stack técnica
 
 - React 19 + TypeScript 6
+- React Router
 - Vite 8
 - Tailwind CSS v4
 - Three.js
@@ -62,6 +64,13 @@ npm run dev
 ```
 
 Acesse: http://localhost:5173/forja3d/
+
+Links diretos também funcionam localmente:
+
+```text
+http://localhost:5173/forja3d/editor/qr-pix
+http://localhost:5173/forja3d/editor/keychain
+```
 
 Para validar produção localmente:
 

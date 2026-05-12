@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Forja3D</title>
+  </head>
+  <body>
+    <script>
+      (function () {
+        var base = '/forja3d/'
+        var redirectPath = window.location.pathname + window.location.search + window.location.hash
+        sessionStorage.setItem('forja3d.redirect', redirectPath)
+        window.location.replace(base)
+      })()
+    </script>
+  </body>
+</html>
