@@ -1,10 +1,10 @@
+import { Link } from 'react-router'
 import type { Model } from '../../../shared/types'
 import { Badge } from '../ui'
 import { CATEGORY_LABELS } from '../../../shared/constants'
 
 interface ModelCardProps {
   model: Model
-  onClick: (slug: string) => void
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -15,10 +15,10 @@ const CATEGORY_COLORS: Record<string, string> = {
   letters: 'bg-green-500/10 text-green-400',
 }
 
-export function ModelCard({ model, onClick }: ModelCardProps) {
+export function ModelCard({ model }: ModelCardProps) {
   return (
-    <button
-      onClick={() => onClick(model.slug)}
+    <Link
+      to={`/editor/${model.slug}`}
       className="group flex flex-col gap-3 rounded-xl border border-zinc-800 bg-zinc-900 p-5 text-left transition-all hover:border-zinc-600 hover:bg-zinc-800/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
     >
       <div
@@ -41,7 +41,7 @@ export function ModelCard({ model, onClick }: ModelCardProps) {
           {model.description}
         </p>
       </div>
-    </button>
+    </Link>
   )
 }
 

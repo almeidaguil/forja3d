@@ -29,7 +29,7 @@ Site ao vivo: https://almeidaguil.github.io/forja3d/
 | Chaveiro com Texto | ✅ Produção |
 | QR Code Pix | ✅ Produção |
 | QR Code genérico | ✅ Produção |
-| Roteamento por URL | 🔲 A implementar |
+| Roteamento por URL | ✅ Completo |
 | Web Worker para OpenSCAD WASM | 🔲 A implementar |
 | Documentação sincronizada | ✅ Atualizada em 2026-05-12 |
 
@@ -84,7 +84,9 @@ Observação: não existe `src/domain/` físico na V1 atual. Os tipos de domíni
 - `ModelEditor` renderiza parâmetros, upload de imagem quando necessário, preview e botões de download.
 - `ParameterForm` suporta `string`, `number`, `boolean`, `select`, `color` e `image`.
 - `ThreePreview` renderiza o STL principal e, quando existe, o STL secundário.
-- `App.tsx` usa roteamento por estado local (`home`/`editor`).
+- `App.tsx` usa React Router com `BrowserRouter` e `basename` baseado em `import.meta.env.BASE_URL`.
+- Links diretos para editores seguem o formato `/forja3d/editor/:slug`.
+- `public/404.html` preserva deep links no GitHub Pages e redireciona para o SPA.
 
 ### Brand e Assets
 
@@ -144,17 +146,17 @@ Observação: não existe `src/domain/` físico na V1 atual. Os tipos de domíni
 - Depois do merge em `develop`, abrir PR de `develop` para `main`.
 - Confirmar deploy automático do GitHub Pages após merge em `main`.
 
-### P1 — Roteamento por URL
-
-- Adicionar React Router em branch própria.
-- Mapear `/` para Home e `/editor/:slug` para ModelEditor.
-- Preservar compatibilidade com base `/forja3d/` do GitHub Pages.
-
-### P2 — Injeção de Dependências na Raiz
+### P1 — Injeção de Dependências na Raiz
 
 - Remover import direto de adaptadores de infraestrutura dentro de hooks de apresentação.
 - Centralizar composição dos builders em um ponto de entrada.
 - Manter `generateModel` dependente apenas de ports.
+
+### P2 — Testes e Limpeza de Camada em `generateModel`
+
+- Adicionar suíte mínima de testes de caracterização.
+- Remover import direto de infraestrutura/lib externa dentro de `application`.
+- Cobrir fluxos de QR Link, Texto, Wi-Fi e Pix.
 
 ### P3 — Worker para OpenSCAD WASM
 
@@ -177,7 +179,7 @@ Observação: não existe `src/domain/` físico na V1 atual. Os tipos de domíni
 | OpenSCAD WASM para modelos paramétricos | Decidido e implementado |
 | Potrace para carimbos com detalhes | Decidido e implementado |
 | QR Codes gerados no cliente | Decidido e implementado |
-| React Router para rotas da V1 | Decidido, pendente |
+| React Router para rotas da V1 | Decidido e implementado |
 | Web Worker para OpenSCAD | Decidido, pendente |
 
 ## Retomada de Sessão
@@ -224,3 +226,4 @@ npm run dev
 | 2026-04-17 | QR Code Pix 3D com STL/SVG/PNG e Pix copia-e-cola |
 | 2026-04-17 | Chaveiro com Texto com fontes locais, NFC e 3 formatos |
 | 2026-05-12 | Documentação principal sincronizada com o estado real do projeto e com o QR Code genérico |
+| 2026-05-12 | Roteamento por URL com React Router: Home em `/`, editores em `/editor/:slug` e fallback para GitHub Pages |

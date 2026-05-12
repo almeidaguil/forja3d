@@ -61,7 +61,7 @@ Opções:
 Impacto na V1:
 
 - Não implementar auth na V1.
-- Adicionar roteamento real antes da V2 para facilitar rotas protegidas.
+- Roteamento real já existe na V1; futuras rotas protegidas podem partir da estrutura atual.
 
 ## Créditos e Stripe
 
@@ -185,7 +185,6 @@ Impacto na V1:
 
 | Dívida | Por que importa |
 |---|---|
-| Roteamento por `useState` | Auth e histórico precisam de URLs reais |
 | `presentation` instancia infraestrutura | Troca para API fica mais difícil |
 | Catálogo importado direto | API de modelos precisa de contrato |
 | `IOpenScadRenderer` legado | Contrato deve refletir o caminho real de geração |
@@ -217,3 +216,4 @@ Impacto na V1:
 | 2026-04-17 | `src/data/index.ts` | Comentário `// V2:` registra futura troca por `IModelRepository` |
 | 2026-04-17 | `src/application/useCases/generateModel/` | `GenerationResult` suporta `secondaryGeometry`, `svgString`, `pngDataUrl` e `pixCopiaCola` |
 | 2026-05-12 | `src/presentation/hooks/useModelGenerator.ts` | Hook ainda instancia adaptadores de infraestrutura diretamente; resolver antes da V2 |
+| 2026-05-12 | `src/App.tsx` | Roteamento por URL foi implementado com React Router e prepara futuras rotas protegidas |
