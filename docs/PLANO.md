@@ -51,7 +51,7 @@ Site ao vivo: https://almeidaguil.github.io/forja3d/
 | Modelo | Slug | Tecnologia | Saídas |
 |---|---|---|---|
 | Cortador de Biscoito | `cookie-cutter` | Canvas tracer + OpenSCAD WASM | STL |
-| Carimbo | `stamp` | Potrace + Three.js | STL |
+| Carimbo | `stamp` | Potrace WASM + Three.js | STL |
 | Chaveiro com Texto | `keychain` | OpenSCAD WASM + fontes TTF locais | STL |
 | QR Code Pix | `qr-pix` | EMV BR Code + qrcode + Three.js | STL, SVG, PNG |
 | QR Code | `qr-code` | qrcode + Three.js | STL, SVG, PNG |
@@ -73,7 +73,7 @@ Observação: não existe `src/domain/` físico na V1 atual. Os tipos de domíni
 
 - **Cortador:** imagem → flood-fill → tracer 4-conectado → OpenSCAD WASM → STL.
 - **Cortador + Carimbo:** gera STL do cortador via OpenSCAD e STL do carimbo via Potrace com tolerância de encaixe.
-- **Carimbo:** imagem → Potrace multi-path → Three.js ExtrudeGeometry → STL.
+- **Carimbo:** imagem → Potrace WASM multi-path → Three.js ExtrudeGeometry → STL.
 - **Chaveiro:** texto e parâmetros → template SCAD → fonte TTF local → OpenSCAD WASM → STL.
 - **QR Code Pix:** payload Pix EMV BR Code client-side → matriz QR → geometria 3D → STL/SVG/PNG.
 - **QR Code genérico:** link, texto ou Wi-Fi → matriz QR → geometria 3D → STL/SVG/PNG.
@@ -227,3 +227,5 @@ npm run dev
 | 2026-04-17 | Chaveiro com Texto com fontes locais, NFC e 3 formatos |
 | 2026-05-12 | Documentação principal sincronizada com o estado real do projeto e com o QR Code genérico |
 | 2026-05-12 | Roteamento por URL com React Router: Home em `/`, editores em `/editor/:slug` e fallback para GitHub Pages |
+| 2026-05-12 | Segurança: audit zerado com troca de `potrace`/Jimp por `esm-potrace-wasm`, atualização de `postcss` e transitivos |
+| 2026-05-12 | Estabilidade: `PotraceStampBuilder` limita a entrada do Potrace WASM a 96 px no maior lado e usa saída de paths para evitar erro `offset is out of bounds` |

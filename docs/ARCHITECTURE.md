@@ -92,7 +92,7 @@ Implementa renderização, vetorização e geração de payloads.
 |---|---|---|
 | `OpenScadGeometryBuilder` | OpenSCAD WASM | Cortador e chaveiro com texto |
 | `CanvasImageTracer` | Canvas API | Contorno 4-conectado para cortador |
-| `PotraceStampBuilder` | Potrace + Three.js | Carimbo com detalhes vetoriais |
+| `PotraceStampBuilder` | Potrace WASM + Three.js | Carimbo com detalhes vetoriais |
 | `HeightmapStampBuilder` | Three.js | Builder legado para carimbo heightmap |
 | `QrCodeGeometryBuilder` | qrcode + Three.js | QR Code Pix e QR Code genérico |
 | `PixPayloadBuilder` | TypeScript puro | Payload EMV BR Code Pix |
@@ -138,7 +138,7 @@ O roteador usa `basename` derivado de `import.meta.env.BASE_URL`, mantendo compa
 ### Carimbo
 
 1. Usuário envia imagem.
-2. `PotraceStampBuilder` vetoriza com Potrace.
+2. `PotraceStampBuilder` binariza a imagem pelo threshold da UI e vetoriza com Potrace WASM.
 3. Three.js gera geometria extrudada.
 4. O STL é baixado pelo navegador.
 
