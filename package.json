@@ -20,6 +20,7 @@
     "qrcode": "^1.5.4",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "react-router": "^7.15.0",
     "three": "^0.183.2",
     "three-bvh-csg": "^0.0.18"
   },

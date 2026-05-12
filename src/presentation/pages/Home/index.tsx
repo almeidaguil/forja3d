@@ -3,13 +3,9 @@ import { ModelCard } from '../../components/ModelCard'
 import { APP_NAME, CATEGORY_LABELS } from '../../../shared/constants'
 import type { ModelCategory } from '../../../shared/types'
 
-interface HomeProps {
-  onSelectModel: (slug: string) => void
-}
-
 const CATEGORIES: ModelCategory[] = ['cutters', 'stamps', 'keychains', 'signs', 'letters']
 
-export function Home({ onSelectModel }: HomeProps) {
+export function Home() {
   return (
     <main className="flex-1 w-full max-w-6xl mx-auto px-6 py-12">
       <header className="mb-12 text-center">
@@ -32,11 +28,7 @@ export function Home({ onSelectModel }: HomeProps) {
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {categoryModels.map((model) => (
-                <ModelCard
-                  key={model.id}
-                  model={model}
-                  onClick={onSelectModel}
-                />
+                <ModelCard key={model.id} model={model} />
               ))}
             </div>
           </section>
