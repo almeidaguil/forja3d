@@ -1,10 +1,18 @@
 import * as THREE from 'three'
 import { STLExporter } from 'three/addons/exporters/STLExporter.js'
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js'
-import Potrace from 'potrace'
+import { init as initPotrace, potrace } from 'esm-potrace-wasm'
 import type { ExtrudeConfig, IGeometryBuilder } from '../../application/ports/IGeometryBuilder'
 
 type Pt = [number, number]
+type PotraceResult = string | string[]
+type PotraceImageInput = {
+  data: number[]
+  width: number
+  height: number
+}
+
+const MAX_TRACE_DIMENSION = 96
 
 // ── Bézier cubic sampler ──────────────────────────────────────────────────────
 
@@ -163,34 +171,83 @@ function buildShapes(subpaths: Pt[][], mmPerPx: number, mirror: boolean): THREE.
   })
 }
 
-// ── ImageData → PNG Buffer ────────────────────────────────────────────────────
+// ── ImageData preprocessing ──────────────────────────────────────────────────
 
-async function imageDataToBlobUrl(img: ImageData): Promise<string> {
-  const canvas = new OffscreenCanvas(img.width, img.height)
-  const ctx = canvas.getContext('2d')!
-  ctx.putImageData(img, 0, 0)
-  const blob = await canvas.convertToBlob({ type: 'image/png' })
-  return URL.createObjectURL(blob)
+function thresholdImageData(img: ImageData, threshold: number): ImageData {
+  const out = new ImageData(img.width, img.height)
+  for (let i = 0; i < img.data.length; i += 4) {
+    const r = img.data[i]
+    const g = img.data[i + 1]
+    const b = img.data[i + 2]
+    const a = img.data[i + 3]
+    const luminance = 0.299 * r + 0.587 * g + 0.114 * b
+    const value = a > 0 && luminance < threshold ? 0 : 255
+    out.data[i] = value
+    out.data[i + 1] = value
+    out.data[i + 2] = value
+    out.data[i + 3] = 255
+  }
+  return out
+}
+
+function resizeImageDataForTrace(img: ImageData): ImageData {
+  const maxDimension = Math.max(img.width, img.height)
+  if (maxDimension <= MAX_TRACE_DIMENSION) return img
+
+  const scale = MAX_TRACE_DIMENSION / maxDimension
+  const width = Math.max(1, Math.round(img.width * scale))
+  const height = Math.max(1, Math.round(img.height * scale))
+
+  const source = document.createElement('canvas')
+  source.width = img.width
+  source.height = img.height
+  const sourceCtx = source.getContext('2d')
+  if (!sourceCtx) throw new Error('Canvas 2D not available')
+  sourceCtx.putImageData(img, 0, 0)
+
+  const target = document.createElement('canvas')
+  target.width = width
+  target.height = height
+  const targetCtx = target.getContext('2d')
+  if (!targetCtx) throw new Error('Canvas 2D not available')
+  targetCtx.drawImage(source, 0, 0, width, height)
+  return targetCtx.getImageData(0, 0, width, height)
+}
+
+function extractPathData(result: PotraceResult): string {
+  if (Array.isArray(result)) {
+    const path = result.join(' ')
+    if (!path) throw new Error('Potrace: no path found in path output')
+    return path
+  }
+
+  const match = result.match(/\sd="([^"]+)"/)
+  if (!match) throw new Error('Potrace: no path found in SVG output')
+  return match[1]
 }
 
 // ── Potrace trace ─────────────────────────────────────────────────────────────
 
 async function traceWithPotrace(img: ImageData, threshold: number, turdSize: number): Promise<string> {
-  const url = await imageDataToBlobUrl(img)
-  try {
-    return await new Promise<string>((resolve, reject) => {
-      const pt = new Potrace.Potrace({ threshold, turdSize, optCurve: true })
-      pt.loadImage(url, (_, err) => {
-        if (err) return reject(err)
-        const svg = pt.getSVG()
-        const match = svg.match(/\sd="([^"]+)"/)
-        if (!match) return reject(new Error('Potrace: no path found in SVG output'))
-        resolve(match[1])
-      })
-    })
-  } finally {
-    URL.revokeObjectURL(url)
+  await initPotrace()
+  const tracedImage = thresholdImageData(resizeImageDataForTrace(img), threshold)
+  const potraceInput: PotraceImageInput = {
+    data: Array.from(tracedImage.data),
+    width: tracedImage.width,
+    height: tracedImage.height,
   }
+  const result = await potrace(potraceInput as unknown as ImageData, {
+    turdsize: turdSize,
+    turnpolicy: 4,
+    alphamax: 1,
+    opticurve: 1,
+    opttolerance: 0.2,
+    pathonly: true,
+    extractcolors: false,
+    posterizelevel: 2,
+    posterizationalgorithm: 0,
+  }) as PotraceResult
+  return extractPathData(result)
 }
 
 // ── Main builder ──────────────────────────────────────────────────────────────

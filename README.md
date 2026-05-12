@@ -37,7 +37,7 @@ O Forja3D permite criar modelos 3D personalizados para impressão, ajustando par
 - Tailwind CSS v4
 - Three.js
 - OpenSCAD WASM
-- Potrace
+- Potrace WASM
 - qrcode
 - GitHub Actions + GitHub Pages
 
