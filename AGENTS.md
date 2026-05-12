@@ -70,7 +70,7 @@ shared       → pode ser importado por qualquer camada
 - **Rendering:** OpenSCAD WASM (modelos com texto/geometria) + Three.js ExtrudeGeometry (imagem→3D)
 - **Deploy:** GitHub Pages — totalmente estático, sem backend na V1
 - **Repositório:** https://github.com/almeidaguil/forja3d
-- **Caminho local:** `/Users/guisalmeida/Documents/Pessoal/forja3d`
+- **Caminho local principal:** `c:\Users\Usuario\Documents\Workspace\forja3d`
 
 Para contexto completo leia nesta ordem:
 1. `docs/PLANO.md` — estado atual, o que foi feito, próximos passos

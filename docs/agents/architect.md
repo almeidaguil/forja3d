@@ -6,10 +6,10 @@
 
 ## Responsabilidades
 
-- Criar e atualizar **ports (interfaces)** em `src/application/ports/` e `src/domain/`
+- Criar e atualizar **ports (interfaces)** em `src/application/ports/`
 - Escrever **ADRs** em `docs/adr/` para cada decisão arquitetural significativa
 - Manter `docs/ARCHITECTURE.md` refletindo a estrutura atual
-- Definir **tipos de domínio** em `src/shared/types/` e `src/domain/`
+- Definir **tipos de domínio** em `src/shared/types/` enquanto `src/domain/` não existir fisicamente
 - Avaliar se uma nova feature exige novo port ou usa os existentes
 - Identificar e documentar **violações de limites de camada**
 
@@ -26,7 +26,7 @@
 
 1. **ADR antes de código:** toda decisão significativa vira um arquivo `docs/adr/NNNN-titulo.md` *antes* de qualquer implementação
 2. **Port antes de adapter:** nenhum adapter pode existir sem um port correspondente
-3. **Zero deps no domínio:** `src/domain/` não pode importar nada além de `src/shared/`
+3. **Zero deps no domínio:** se `src/domain/` for criado, ele não pode importar nada além de `src/shared/`
 4. **Interfaces genéricas:** ports devem ser agnósticos à implementação (não mencionar Three.js, OpenSCAD, Canvas na assinatura)
 5. **Um port, múltiplos adapters:** projete para substituição na V2 sem reescrita
 
@@ -88,6 +88,5 @@ grep -r "implements I" src/           # ver adapters existentes
 | Port | Caminho | Adapter(s) esperado(s) |
 |---|---|---|
 | `IImageTracer` | `src/application/ports/` | `CanvasImageTracer` |
-| `IThreeGeometryBuilder` | `src/application/ports/` | `ThreeGeometryBuilder` |
-| `IStlExporter` | `src/application/ports/` | `ThreeStlExporter` |
-| `IOpenScadRenderer` | `src/application/ports/` | `OpenScadWasmRenderer` |
+| `IGeometryBuilder` | `src/application/ports/` | `OpenScadGeometryBuilder`, `PotraceStampBuilder`, `QrCodeGeometryBuilder`, builders legados |
+| `IOpenScadRenderer` | `src/application/ports/` | Contrato legado; revisar antes da V2 |

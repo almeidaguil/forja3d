@@ -9,14 +9,16 @@ Web app para gerar modelos 3D paramétricos no browser e exportar STL para impre
 
 ## Arquitetura (Clean Architecture)
 ```
-src/domain/          ← entidades puras (zero deps externas)
 src/application/     ← casos de uso + ports + services
 src/infrastructure/  ← adaptadores (OpenSCAD, Three.js, Potrace, QR)
 src/presentation/    ← React (páginas, componentes, hooks)
-src/shared/          ← tipos globais
+src/shared/          ← tipos globais e constantes
+src/data/            ← catálogo estático JSON da V1
 public/fonts/        ← 19 TTFs para OpenSCAD WASM
 ```
 **Regra:** outer layers importam inner; inner NUNCA importam outer.
+
+Observação: a V1 atual não possui `src/domain/` físico; os tipos de domínio vivem em `src/shared/types/`.
 
 ## Modelos em produção
 | Slug | Estratégia | Tecnologia |
@@ -25,13 +27,14 @@ public/fonts/        ← 19 TTFs para OpenSCAD WASM
 | `stamp` | `potrace-stamp` | Potrace multi-path → Three.js ExtrudeGeometry |
 | `keychain` | `openscad` template | OpenSCAD WASM + 19 fontes TTF locais |
 | `qr-pix` | `three-qr` | EMV BR Code + Three.js BoxGeometry por módulo |
+| `qr-code` | `three-qr` | Link, texto ou Wi-Fi + Three.js BoxGeometry por módulo |
 
 ## Convenções
 - Código em **inglês**; comentários e commits em **português (pt-BR)**
 - TypeScript strict — zero `any`, zero `as` agressivo
 - Zero `console.log` em código commitado
 - `npm run build && npm run lint` antes de qualquer commit
-- Componentes React não importam infrastructure — usam hooks
+- Dívida técnica conhecida: `useModelGenerator` ainda instancia adaptadores de infrastructure; corrigir antes da V2
 
 ## Novas features de texto/fonte
 Usar as 19 fontes TTF de `public/fonts/` — não baixar novas.
