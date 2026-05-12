@@ -1,68 +1,30 @@
-# 🔄 Criar Pull Request - ParameterForm ImageField
+# Criar Pull Request
 
-## Status Atual
-- ✅ Branch: `feature/parameter-form-image-field` — criada e pushed
-- ✅ Commit: `875186c` — feat(parameter-form): add image field type for model image uploads
-- ✅ Build: OK | Lint: OK | TypeScript: OK
-- ⏳ **PR: PRONTA PARA CRIAR**
+Este arquivo é um lembrete operacional genérico. Ele não representa uma PR específica.
 
----
+## Fluxo
 
-## Opção 1: Clique Automático (Navegador)
-Clique no link abaixo para abrir o formulário de PR pré-preenchido:
-
-🔗 **[Criar PR no GitHub](https://github.com/almeidaguil/forja3d/compare/develop...feature/parameter-form-image-field)**
-
-Depois:
-1. Clique em **"Create pull request"**
-2. Pronto! A PR será criada automaticamente
-
----
-
-## Opção 2: Linha de Comando (se --web não funcionar)
 ```bash
-cd /Users/ThaysTeles/Desktop/workspace/forja3d
-gh pr create --base develop \
-  --title "feat(parameter-form): add image field type for model image uploads" \
-  --body "## O que mudou?
-
-- ✅ Adicionado tipo de campo 'image' em ParameterForm
-- ✅ Componente ImageField com validação de tipo (PNG, JPG, WEBP) e tamanho (max 5 MB)
-- ✅ Integrado com ModelEditor existente
-- ✅ Build passa sem erros
-
-## Status
-
-- ✅ Build: OK (5.06s)
-- ✅ Lint: OK (ESLint)
-- ✅ TypeScript: OK (strict mode)
-- ✅ Deploy local: OK
-
-## Próximos passos
-
-- ThreePreview com geometria estática
-- ThreeGeometryBuilder + ThreeStlExporter
-- Canvas image tracer" \
-  --head feature/parameter-form-image-field \
-  --web
+npm run build
+npm run lint
+git status --short
+git push origin <branch>
+gh pr create --base develop --head <branch>
 ```
 
----
+Depois do merge em `develop`, a promoção para produção acontece por PR separado:
 
-## Opção 3: Criar Manualmente no GitHub Web
-1. Acesse: https://github.com/almeidaguil/forja3d/compare/develop...feature/parameter-form-image-field
-2. Clique em **"Create pull request"**
-3. Pronto!
-
----
-
-## Depois de Criar a PR
 ```bash
-# Quando a PR for merged, delete a branch local e remota:
-git branch -d feature/parameter-form-image-field
-git push origin --delete feature/parameter-form-image-field
+gh pr create --base main --head develop \
+  --title "chore(release): promover develop para main" \
+  --body "Deploy das alterações acumuladas em develop para produção."
 ```
 
----
+## Checklist
 
-**Status:** ✅ Tudo pronto. Apenas crie a PR e continue com ThreePreview (próxima feature).
+- [ ] Branch não é `main` nem `develop`.
+- [ ] `npm run build` passa.
+- [ ] `npm run lint` passa.
+- [ ] Commits usam Conventional Commits em português.
+- [ ] PR aponta para `develop`.
+- [ ] Deploy final acontece apenas após PR de `develop` para `main`.
