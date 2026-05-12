@@ -9,7 +9,7 @@ Atualize este arquivo sempre que uma decisão da V1 criar implicação para V2. 
 | Área | V1 atual | V2 alvo |
 |---|---|---|
 | Hospedagem | GitHub Pages | Frontend + API |
-| Renderização | Cliente: OpenSCAD WASM, Three.js, Potrace | Servidor para jobs pesados, cliente para preview |
+| Renderização | Cliente: OpenSCAD WASM, Three.js, Potrace WASM | Servidor para jobs pesados, cliente para preview |
 | Auth | Nenhuma | Google OAuth e/ou email |
 | Créditos | Campo `creditsRequired` nos modelos, sem cobrança | Saldo real por usuário |
 | Pagamentos | Nenhum | Stripe Checkout |
