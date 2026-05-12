@@ -31,6 +31,8 @@ Site ao vivo: https://almeidaguil.github.io/forja3d/
 | QR Code genérico | ✅ Produção |
 | Roteamento por URL | ✅ Completo |
 | Injeção de dependências na raiz | ✅ Completo |
+| Testes de caracterização para QR em `generateModel` | ✅ Completo |
+| Limpeza de camada QR em `generateModel` | ✅ Completo |
 | Web Worker para OpenSCAD WASM | 🔲 A implementar |
 | Documentação sincronizada | ✅ Atualizada em 2026-05-12 |
 
@@ -77,6 +79,7 @@ Observação: não existe `src/domain/` físico na V1 atual. Os tipos de domíni
 - `main.tsx` cria `AppDependencies` uma vez e injeta em `App`.
 - `ModelEditor` recebe as dependências do gerador e repassa para `useModelGenerator`.
 - `useModelGenerator` chama `generateModel` sem importar `src/infrastructure`.
+- `generateModel` recebe portas de QR (`IQrContentBuilder` e `IQrAssetExporter`) e não importa `src/infrastructure` nem `qrcode` diretamente.
 
 ### Pesquisa Mafagrafos
 
@@ -165,11 +168,11 @@ Detalhes e fontes: [MAFAGRAFOS_RESEARCH.md](MAFAGRAFOS_RESEARCH.md).
 - Depois do merge em `develop`, abrir PR de `develop` para `main`.
 - Confirmar deploy automático do GitHub Pages após merge em `main`.
 
-### P1 — Testes e Limpeza de Camada em `generateModel`
+### P1 — Ampliar Testes em `generateModel`
 
-- Adicionar suíte mínima de testes de caracterização.
-- Remover import direto de infraestrutura/lib externa dentro de `application`.
-- Cobrir fluxos de QR Link, Texto, Wi-Fi e Pix.
+- Ampliar cobertura para fluxos de imagem: cortador, cortador + carimbo e carimbo Potrace.
+- Cobrir fluxos OpenSCAD com chaveiro de texto usando builders fake.
+- Manter `application` sem imports diretos de `infrastructure`.
 
 ### P2 — Porta Tag NFC / Chaveiro NFC Parametrizado
 
@@ -200,6 +203,7 @@ Detalhes e fontes: [MAFAGRAFOS_RESEARCH.md](MAFAGRAFOS_RESEARCH.md).
 | QR Codes gerados no cliente | Decidido e implementado |
 | React Router para rotas da V1 | Decidido e implementado |
 | Injeção de dependências na raiz | Decidido e implementado |
+| QR SVG/PNG e Pix via ports de application | Decidido e implementado |
 | Porta Tag NFC como próxima feature de produto | Decidido, pendente |
 | Web Worker para OpenSCAD | Decidido, pendente |
 
@@ -252,3 +256,6 @@ npm run dev
 | 2026-05-12 | Estabilidade: `PotraceStampBuilder` limita a entrada do Potrace WASM a 96 px no maior lado e usa saída de paths para evitar erro `offset is out of bounds` |
 | 2026-05-12 | Produto: pesquisa Mafagrafos registrada e Porta Tag NFC escolhido como próxima feature após a P1 arquitetural |
 | 2026-05-12 | Arquitetura: dependências concretas movidas para `src/app/dependencies.ts` e injetadas a partir da raiz |
+| 2026-05-12 | Testes: Vitest adicionado com cobertura de caracterização para QR Link, Texto, Wi-Fi e Pix em `generateModel` |
+| 2026-05-12 | Testes: regressão do hook `useModelGenerator` cobre o repasse completo das dependências de QR |
+| 2026-05-12 | Arquitetura: geração de conteúdo/assets QR movida para ports e adapters, removendo imports de infraestrutura/lib externa do caso de uso |
