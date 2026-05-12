@@ -30,6 +30,7 @@ Site ao vivo: https://almeidaguil.github.io/forja3d/
 | QR Code Pix | ✅ Produção |
 | QR Code genérico | ✅ Produção |
 | Roteamento por URL | ✅ Completo |
+| Injeção de dependências na raiz | ✅ Completo |
 | Web Worker para OpenSCAD WASM | 🔲 A implementar |
 | Documentação sincronizada | ✅ Atualizada em 2026-05-12 |
 
@@ -60,6 +61,7 @@ Site ao vivo: https://almeidaguil.github.io/forja3d/
 
 ```text
 src/
+  app/              composição de dependências da aplicação
   application/      casos de uso, portas e serviços
   infrastructure/   adaptadores OpenSCAD, Three.js, Potrace, QR e Canvas
   presentation/     React, páginas, hooks e componentes
@@ -68,6 +70,23 @@ src/
 ```
 
 Observação: não existe `src/domain/` físico na V1 atual. Os tipos de domínio ficam em `src/shared/types/`. A separação desejada está documentada em [ARCHITECTURE.md](ARCHITECTURE.md), junto das dívidas técnicas.
+
+### Composição de Dependências
+
+- `src/app/dependencies.ts` instancia os adaptadores concretos da V1.
+- `main.tsx` cria `AppDependencies` uma vez e injeta em `App`.
+- `ModelEditor` recebe as dependências do gerador e repassa para `useModelGenerator`.
+- `useModelGenerator` chama `generateModel` sem importar `src/infrastructure`.
+
+### Pesquisa Mafagrafos
+
+A análise de produto sobre a Mafagrafos registrou oportunidades em chaveiros, porta tag NFC, ornamentos com nome, letreiros e cortadores temáticos.
+
+Decisão tomada: primeiro concluir a P1 de arquitetura, depois iniciar a próxima feature de produto.
+
+Próxima feature recomendada: **Porta tag NFC / chaveiro NFC parametrizado**.
+
+Detalhes e fontes: [MAFAGRAFOS_RESEARCH.md](MAFAGRAFOS_RESEARCH.md).
 
 ### Fluxos Principais
 
@@ -146,17 +165,17 @@ Observação: não existe `src/domain/` físico na V1 atual. Os tipos de domíni
 - Depois do merge em `develop`, abrir PR de `develop` para `main`.
 - Confirmar deploy automático do GitHub Pages após merge em `main`.
 
-### P1 — Injeção de Dependências na Raiz
-
-- Remover import direto de adaptadores de infraestrutura dentro de hooks de apresentação.
-- Centralizar composição dos builders em um ponto de entrada.
-- Manter `generateModel` dependente apenas de ports.
-
-### P2 — Testes e Limpeza de Camada em `generateModel`
+### P1 — Testes e Limpeza de Camada em `generateModel`
 
 - Adicionar suíte mínima de testes de caracterização.
 - Remover import direto de infraestrutura/lib externa dentro de `application`.
 - Cobrir fluxos de QR Link, Texto, Wi-Fi e Pix.
+
+### P2 — Porta Tag NFC / Chaveiro NFC Parametrizado
+
+- Criar novo modelo parametrizado inspirado na pesquisa Mafagrafos.
+- Suportar formatos simples, texto curto em relevo, furo para argola e cavidade para tag NFC.
+- Manter V1 sem backend, sem leitura/gravação NFC e sem pagamentos.
 
 ### P3 — Worker para OpenSCAD WASM
 
@@ -180,6 +199,8 @@ Observação: não existe `src/domain/` físico na V1 atual. Os tipos de domíni
 | Potrace para carimbos com detalhes | Decidido e implementado |
 | QR Codes gerados no cliente | Decidido e implementado |
 | React Router para rotas da V1 | Decidido e implementado |
+| Injeção de dependências na raiz | Decidido e implementado |
+| Porta Tag NFC como próxima feature de produto | Decidido, pendente |
 | Web Worker para OpenSCAD | Decidido, pendente |
 
 ## Retomada de Sessão
@@ -229,3 +250,5 @@ npm run dev
 | 2026-05-12 | Roteamento por URL com React Router: Home em `/`, editores em `/editor/:slug` e fallback para GitHub Pages |
 | 2026-05-12 | Segurança: audit zerado com troca de `potrace`/Jimp por `esm-potrace-wasm`, atualização de `postcss` e transitivos |
 | 2026-05-12 | Estabilidade: `PotraceStampBuilder` limita a entrada do Potrace WASM a 96 px no maior lado e usa saída de paths para evitar erro `offset is out of bounds` |
+| 2026-05-12 | Produto: pesquisa Mafagrafos registrada e Porta Tag NFC escolhido como próxima feature após a P1 arquitetural |
+| 2026-05-12 | Arquitetura: dependências concretas movidas para `src/app/dependencies.ts` e injetadas a partir da raiz |

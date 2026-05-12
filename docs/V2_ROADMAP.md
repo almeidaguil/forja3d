@@ -28,6 +28,7 @@ Atualize este arquivo sempre que uma decisão da V1 criar implicação para V2. 
 | `GenerationResult` suporta múltiplas saídas | Base para jobs multi-arquivo |
 | QR Code gera SVG/PNG além de STL | Modelo de saídas múltiplas já existe |
 | Renderização encapsulada em builders | Adaptadores podem migrar para API |
+| Dependências concretas compostas em `src/app` | Troca futura para workers ou API não exige mudar hooks de apresentação |
 
 ## API Backend
 
@@ -185,7 +186,6 @@ Impacto na V1:
 
 | Dívida | Por que importa |
 |---|---|
-| `presentation` instancia infraestrutura | Troca para API fica mais difícil |
 | Catálogo importado direto | API de modelos precisa de contrato |
 | `IOpenScadRenderer` legado | Contrato deve refletir o caminho real de geração |
 | Sem worker para WASM | Gerações longas travam a UI |
@@ -215,5 +215,5 @@ Impacto na V1:
 | 2026-04-14 | `src/shared/types/index.ts` | `creditsRequired` prepara o catálogo para sistema de créditos |
 | 2026-04-17 | `src/data/index.ts` | Comentário `// V2:` registra futura troca por `IModelRepository` |
 | 2026-04-17 | `src/application/useCases/generateModel/` | `GenerationResult` suporta `secondaryGeometry`, `svgString`, `pngDataUrl` e `pixCopiaCola` |
-| 2026-05-12 | `src/presentation/hooks/useModelGenerator.ts` | Hook ainda instancia adaptadores de infraestrutura diretamente; resolver antes da V2 |
+| 2026-05-12 | `src/app/dependencies.ts` | Dependências concretas da V1 ficam compostas na raiz, facilitando troca futura por API ou workers |
 | 2026-05-12 | `src/App.tsx` | Roteamento por URL foi implementado com React Router e prepara futuras rotas protegidas |

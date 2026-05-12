@@ -3,7 +3,7 @@ import type { IImageTracer } from '../../ports/IImageTracer'
 import type { GeometryMode, IGeometryBuilder } from '../../ports/IGeometryBuilder'
 import { fillEnclosedRegions } from '../../services/imageProcessing'
 
-interface GenerateModelDeps {
+export interface GenerateModelDeps {
   imageTracer: IImageTracer
   geometryBuilder: IGeometryBuilder
   heightmapBuilder?: IGeometryBuilder
