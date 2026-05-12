@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
+import { createAppDependencies } from './app/dependencies'
 
 const GITHUB_PAGES_REDIRECT_KEY = 'forja3d.redirect'
 
@@ -15,8 +16,10 @@ function restoreGithubPagesRedirect(): void {
 
 restoreGithubPagesRedirect()
 
+const dependencies = createAppDependencies()
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <App dependencies={dependencies} />
   </StrictMode>,
 )

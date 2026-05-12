@@ -8,10 +8,12 @@ import { useParameterForm } from '../../hooks/useParameterForm'
 import { useModelGenerator } from '../../hooks/useModelGenerator'
 import { ACCEPTED_IMAGE_TYPES, MAX_IMAGE_SIZE_BYTES } from '../../../shared/constants'
 import type { Model, ParameterValue } from '../../../shared/types'
+import type { GenerateModelDeps } from '../../../application/useCases/generateModel'
 
 interface ModelEditorProps {
   slug: string
   onBack: () => void
+  modelGeneratorDeps: GenerateModelDeps
 }
 
 interface ImageUploadProps {
@@ -164,10 +166,10 @@ function FormPanel({
   )
 }
 
-export function ModelEditor({ slug, onBack }: ModelEditorProps): JSX.Element {
+export function ModelEditor({ slug, onBack, modelGeneratorDeps }: ModelEditorProps): JSX.Element {
   const model = getModelBySlug(slug)
   const { values, imageFile, setValue, setImageFile } = useParameterForm(model?.parameters ?? [])
-  const { stlBuffer, secondaryStlBuffer, svgString, pngDataUrl, pixCopiaCola, isLoading, error, generate, download, downloadSecondary, downloadSvg, downloadPng } = useModelGenerator(model, values, imageFile)
+  const { stlBuffer, secondaryStlBuffer, svgString, pngDataUrl, pixCopiaCola, isLoading, error, generate, download, downloadSecondary, downloadSvg, downloadPng } = useModelGenerator(model, values, imageFile, modelGeneratorDeps)
 
   const needsImage =
     (model?.renderStrategy.type === 'three-extrude' ||
