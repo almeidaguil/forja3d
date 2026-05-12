@@ -1,11 +1,6 @@
 import { useCallback, useRef, useState } from 'react'
 import type { Model, ParameterValue } from '../../shared/types'
-import { CanvasImageTracer } from '../../infrastructure/tracer/CanvasImageTracer'
-import { OpenScadGeometryBuilder } from '../../infrastructure/openscad/OpenScadGeometryBuilder'
-import { HeightmapStampBuilder } from '../../infrastructure/three/HeightmapStampBuilder'
-import { PotraceStampBuilder } from '../../infrastructure/three/PotraceStampBuilder'
-import { QrCodeGeometryBuilder } from '../../infrastructure/three/QrCodeGeometryBuilder'
-import { generateModel } from '../../application/useCases/generateModel'
+import { generateModel, type GenerateModelDeps } from '../../application/useCases/generateModel'
 import { exportStl } from '../../application/useCases/exportStl'
 
 export interface UseModelGeneratorReturn {
@@ -22,13 +17,6 @@ export interface UseModelGeneratorReturn {
   downloadSvg: () => void
   downloadPng: () => void
 }
-
-// Adapters are instantiated once per hook instance (stable references)
-const tracer = new CanvasImageTracer()
-const builder = new OpenScadGeometryBuilder()
-const heightmapBuilder = new HeightmapStampBuilder()
-const potraceBuilder = new PotraceStampBuilder()
-const qrBuilder = new QrCodeGeometryBuilder()
 
 async function fileToImageData(file: File): Promise<ImageData> {
   return new Promise((resolve, reject) => {
@@ -51,6 +39,7 @@ export function useModelGenerator(
   model: Model | undefined,
   values: Record<string, ParameterValue>,
   imageFile: File | null,
+  deps: GenerateModelDeps,
 ): UseModelGeneratorReturn {
   const [stlBuffer, setStlBuffer] = useState<ArrayBuffer | null>(null)
   const [secondaryStlBuffer, setSecondaryStlBuffer] = useState<ArrayBuffer | null>(null)
@@ -74,11 +63,11 @@ export function useModelGenerator(
       if (imageFile) imageData = await fileToImageData(imageFile)
 
       const result = await generateModel(model, values, imageData, {
-        imageTracer: tracer,
-        geometryBuilder: builder,
-        heightmapBuilder,
-        potraceBuilder,
-        qrBuilder,
+        imageTracer: deps.imageTracer,
+        geometryBuilder: deps.geometryBuilder,
+        heightmapBuilder: deps.heightmapBuilder,
+        potraceBuilder: deps.potraceBuilder,
+        qrBuilder: deps.qrBuilder,
       })
 
       if (result.status === 'success' && result.geometry) {
@@ -99,7 +88,7 @@ export function useModelGenerator(
     } finally {
       setIsLoading(false)
     }
-  }, [model, values, imageFile])
+  }, [model, values, imageFile, deps])
 
   const download = useCallback(() => {
     if (!stlRef.current || !model) return

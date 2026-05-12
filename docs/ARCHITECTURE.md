@@ -10,25 +10,19 @@ A intenção arquitetural é Clean Architecture. O estado real da V1 ainda possu
 
 ```text
 src/
-├── application/
-│   ├── ports/
-│   ├── services/
-│   └── useCases/
-├── infrastructure/
-│   ├── openscad/
-│   ├── qr/
-│   ├── three/
-│   └── tracer/
-├── presentation/
-│   ├── components/
-│   ├── hooks/
-│   └── pages/
-├── shared/
-│   ├── constants/
-│   └── types/
-└── data/
-    └── models/
+  app/              composição de dependências da aplicação
+  application/      casos de uso, portas e serviços
+  infrastructure/   adaptadores OpenSCAD, Three.js, Potrace, QR e Canvas
+  presentation/     React, páginas, hooks e componentes
+  shared/           tipos e constantes
+  data/             catálogo JSON estático
 ```
+
+### `src/app/`
+
+Contém a composição de dependências da V1.
+
+`src/app/dependencies.ts` instancia os adaptadores concretos de infraestrutura e expõe um objeto `AppDependencies`. A raiz (`main.tsx`/`App.tsx`) injeta essas dependências nas páginas. A camada de apresentação recebe portas prontas e não instancia adaptadores diretamente.
 
 ### `src/shared/`
 
@@ -121,6 +115,8 @@ Hooks:
 - `useParameterForm`
 - `useModelGenerator`
 
+`useModelGenerator` recebe as dependências do caso de uso por parâmetro. Ele chama `generateModel`, mas não importa `src/infrastructure`.
+
 `App.tsx` usa React Router com `BrowserRouter`, `Routes`, `Route` e `Navigate`.
 O roteador usa `basename` derivado de `import.meta.env.BASE_URL`, mantendo compatibilidade com `/forja3d/`.
 `public/404.html` preserva deep links do GitHub Pages e redireciona para o SPA.
@@ -179,7 +175,7 @@ O roteador usa `basename` derivado de `import.meta.env.BASE_URL`, mantendo compa
 | Dívida | Estado atual | Direção |
 |---|---|---|
 | Camada `domain/` física ausente | Tipos de domínio vivem em `src/shared/types/` | Criar `src/domain/` apenas quando houver regras puras suficientes |
-| `presentation` importa `infrastructure` | `useModelGenerator` instancia adaptadores diretamente | Mover composição para uma raiz/injeção de dependências |
+| `presentation` importa `infrastructure` | Resolvido com `src/app/dependencies.ts` e injeção em `ModelEditor` | Manter novos adapters fora de `presentation` |
 | `IOpenScadRenderer` pouco usado | O builder atual implementa `IGeometryBuilder` | Remover ou adaptar quando a renderização server-side da V2 for definida |
 | Catálogo importado direto | `src/data/index.ts` exporta JSONs diretamente | Introduzir `IModelRepository` antes da V2 |
 
@@ -191,6 +187,7 @@ O roteador usa `basename` derivado de `import.meta.env.BASE_URL`, mantendo compa
 | [0002](adr/0002-openscad-wasm.md) | OpenSCAD WASM para modelos paramétricos |
 | [0003](adr/0003-three-extrude-for-images.md) | Three.js ExtrudeGeometry para modelos baseados em imagem |
 | [0004](adr/0004-canvas-tracer-v1.md) | Canvas tracer para cortador e Potrace para carimbo |
+| [0005](adr/0005-root-dependency-injection.md) | Composição de dependências na raiz da aplicação |
 
 ## Regras de Evolução
 

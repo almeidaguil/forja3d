@@ -2,13 +2,18 @@ import { BrowserRouter, Link, Navigate, Route, Routes, useNavigate, useParams } 
 import { Home } from './presentation/pages/Home'
 import { ModelEditor } from './presentation/pages/ModelEditor'
 import { APP_NAME } from './shared/constants'
+import type { AppDependencies } from './app/dependencies'
 
 function getRouterBasename(): string | undefined {
   const basename = import.meta.env.BASE_URL.replace(/\/$/, '')
   return basename || undefined
 }
 
-function EditorRoute() {
+interface AppProps {
+  dependencies: AppDependencies
+}
+
+function EditorRoute({ dependencies }: AppProps) {
   const { slug } = useParams()
   const navigate = useNavigate()
 
@@ -16,11 +21,12 @@ function EditorRoute() {
     <ModelEditor
       slug={slug ?? ''}
       onBack={() => navigate('/')}
+      modelGeneratorDeps={dependencies.modelGenerator}
     />
   )
 }
 
-export default function App() {
+export default function App({ dependencies }: AppProps) {
   const logoSrc = `${import.meta.env.BASE_URL}logo.svg`
 
   return (
@@ -46,7 +52,7 @@ export default function App() {
 
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/editor/:slug" element={<EditorRoute />} />
+          <Route path="/editor/:slug" element={<EditorRoute dependencies={dependencies} />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
 
