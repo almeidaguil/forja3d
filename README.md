@@ -15,6 +15,7 @@ O Forja3D permite criar modelos 3D personalizados para impressão, ajustando par
 | Cortador de Biscoito | Gera um cortador a partir do contorno de uma imagem. O modo Cortador + Carimbo entrega duas peças com tolerância para encaixe. | STL |
 | Carimbo | Converte imagem em carimbo 3D com detalhes internos preservados por Potrace. | STL |
 | Chaveiro com Texto | Cria chaveiro com 1 ou 2 linhas, formato retangular, retangular arredondado ou oval, fonte local e slot NFC opcional. | STL |
+| Chaveiro NFC | Gera chaveiro/porta tag NFC com bolso interno para pausa de impressão ou recesso para adesivo e resina. | STL |
 | QR Code Pix | Gera QR Code Pix 3D com payload EMV BR Code client-side e texto copia-e-cola para validação. | STL, SVG, PNG |
 | QR Code | Gera QR Code 3D genérico para link, texto ou rede Wi-Fi. | STL, SVG, PNG |
 
@@ -25,7 +26,8 @@ O Forja3D permite criar modelos 3D personalizados para impressão, ajustando par
 - Download de STL para impressão 3D.
 - Download de SVG e PNG para modelos de QR Code.
 - Pix copia-e-cola para testar o QR Code Pix no app do banco antes de imprimir.
-- 19 fontes TTF locais para o chaveiro com texto, sem dependência de CDN no OpenSCAD.
+- 19 fontes TTF locais para chaveiros com texto, sem dependência de CDN no OpenSCAD.
+- Porta tag NFC parametrizado com múltiplos formatos, folga configurável e dois modos de encaixe.
 - Build e deploy estáticos no GitHub Pages.
 - Links diretos para cada editor de modelo.
 
@@ -70,6 +72,7 @@ Links diretos também funcionam localmente:
 ```text
 http://localhost:5173/forja3d/editor/qr-pix
 http://localhost:5173/forja3d/editor/keychain
+http://localhost:5173/forja3d/editor/nfc-tag-keychain
 ```
 
 Para validar produção localmente:

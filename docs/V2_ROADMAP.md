@@ -30,6 +30,7 @@ Atualize este arquivo sempre que uma decisão da V1 criar implicação para V2. 
 | Renderização encapsulada em builders | Adaptadores podem migrar para API |
 | Dependências concretas compostas em `src/app` | Troca futura para workers ou API não exige mudar hooks de apresentação |
 | QR digital isolado por ports | Payload Pix e export SVG/PNG podem migrar para API sem mudar o caso de uso |
+| Porta Tag NFC existe como peça física | V2 pode adicionar landing pages, analytics e histórico sem mudar o STL básico |
 
 ## API Backend
 
@@ -219,4 +220,5 @@ Impacto na V1:
 | 2026-05-12 | `src/app/dependencies.ts` | Dependências concretas da V1 ficam compostas na raiz, facilitando troca futura por API ou workers |
 | 2026-05-12 | `src/application/ports/IQrContentBuilder.ts` | Conteúdo de QR/Pix fica atrás de port para futura troca por API |
 | 2026-05-12 | `src/application/ports/IQrAssetExporter.ts` | Export SVG/PNG de QR fica atrás de port para futura troca por serviço |
+| 2026-05-12 | `src/data/models/nfc-tag-keychain.json` | Modelo NFC V1 gera apenas a peça física; landing pages e analytics ficam para V2 |
 | 2026-05-12 | `src/App.tsx` | Roteamento por URL foi implementado com React Router e prepara futuras rotas protegidas |

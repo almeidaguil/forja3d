@@ -36,6 +36,46 @@ function normalizeWifiSecurity(value: ParameterValue | undefined): string {
   return typeof value === 'string' ? value : 'WPA'
 }
 
+function buildOpenScadTemplateParams(
+  template: string,
+  values: Record<string, ParameterValue>,
+): Record<string, unknown> {
+  if (template === 'nfc-tag-keychain') {
+    return {
+      text: values.text ?? 'SCAN',
+      shape: values.shape ?? 'Quadrado arredondado',
+      nfcMountMode: values.nfcMountMode ?? 'Bolso interno (pausa)',
+      width: values.width ?? 45,
+      height: values.height ?? 58,
+      thickness: values.thickness ?? 4,
+      textDepth: values.textDepth ?? 1.2,
+      fontSize: values.fontSize ?? 8,
+      holeDiameter: values.holeDiameter ?? 5,
+      nfcDiameter: values.nfcDiameter ?? 25,
+      nfcClearance: values.nfcClearance ?? 0.4,
+      cavityDepth: values.cavityDepth ?? 1.2,
+      coverThickness: values.coverThickness ?? 0.8,
+      topCoverThickness: values.topCoverThickness ?? 0.8,
+      epoxyBorder: values.epoxyBorder ?? true,
+      borderHeight: values.borderHeight ?? 1.2,
+      fontKey: values.fontKey ?? 'NotoSans',
+    }
+  }
+
+  return {
+    text:         values.text         ?? 'Forja3D',
+    text2:        values.text2        ?? '',
+    fontSize:     values.fontSize     ?? 8,
+    shape:        values.shape        ?? 'retangular_arredondado',
+    thickness:    values.thickness    ?? 4,
+    textDepth:    values.textDepth    ?? 1.5,
+    padding:      values.padding      ?? 4,
+    holeDiameter: values.holeDiameter ?? 6,
+    addNfc:       values.addNfc       ?? false,
+    fontKey:      values.fontKey      ?? 'NotoSans',
+  }
+}
+
 export async function generateModel(
   model: Model,
   values: Record<string, ParameterValue>,
@@ -197,18 +237,7 @@ export async function generateModel(
     const geometry = await deps.geometryBuilder.build({
       pathData: '', targetSize: 0, depth: 0,
       scadTemplate,
-      templateParams: {
-        text:         values.text         ?? 'Forja3D',
-        text2:        values.text2        ?? '',
-        fontSize:     values.fontSize     ?? 8,
-        shape:        values.shape        ?? 'retangular_arredondado',
-        thickness:    values.thickness    ?? 4,
-        textDepth:    values.textDepth    ?? 1.5,
-        padding:      values.padding      ?? 4,
-        holeDiameter: values.holeDiameter ?? 6,
-        addNfc:       values.addNfc       ?? false,
-        fontKey:      values.fontKey      ?? 'NotoSans',
-      },
+      templateParams: buildOpenScadTemplateParams(scadTemplate, values),
     })
     return { status: 'success', geometry }
   }
