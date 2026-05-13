@@ -2,29 +2,16 @@
 
 > Documento de retomada para a decisao tomada em 2026-05-12.
 
-## Fontes Consultadas
+## Critério de Pesquisa
 
-A pesquisa considera sinais publicos de demanda em marketplaces de modelos 3D, lojas de produtos personalizados, plataformas artesanais e buscadores de tendencias. Nao ha dependencia de uma marca, loja ou produto especifico.
+A pesquisa considera sinais agregados de demanda por modelos 3D parametrizaveis e produtos personalizados. Este documento registra apenas conclusoes de produto e criterios internos; referencias detalhadas de pesquisa ficam fora da documentacao publica do projeto.
 
-Fontes e consultas usadas como base de retomada:
+As decisoes priorizam:
 
-| Fonte | Consulta / exemplo | Sinal observado |
-|---|---|---|
-| MakerWorld | `personalized keychain`, `nfc keychain`, `customizable tag`, `phone stand` | Modelos personalizaveis e funcionais aparecem com recorrencia em buscas por downloads e relevancia. |
-| Printables | `phoneholder`, `drawer organizer`, `personalized ornament` | Suportes, organizadores e ornamentos aparecem como categorias de uso cotidiano com muitos modelos derivados. |
-| Thingiverse | `nfc keychain`, `customizable keychain`, `phone stand` | Sinal historico de demanda para modelos simples e parametrizaveis. |
-| Elo7 | `impressao 3d personalizado`, `chaveiro personalizado`, `enfeite personalizado` | Demanda brasileira por presentes, brindes e itens com nome/logo. |
-| Shopee BR | `suporte de celular personalizado impressao 3d`, `chaveiro nfc personalizado` | Sinal de produtos fisicos personalizados sendo vendidos no mercado local. |
-
-Links uteis para revalidacao:
-
-- MakerWorld: https://makerworld.com/en/search/models?keyword=personalized%20keychain
-- MakerWorld: https://makerworld.com/en/search/models?keyword=nfc%20keychain
-- MakerWorld: https://makerworld.com/en/search/models?keyword=phone%20stand
-- Printables: https://www.printables.com/search/models?q=phoneholder&o=most_downloaded
-- Printables: https://www.printables.com/search/models?q=drawer%20organizer&o=most_downloaded
-- Elo7: https://www.elo7.com.br/busca?q=chaveiro+personalizado+impressao+3d
-- Shopee BR: https://shopee.com.br/search?keyword=suporte%20celular%20personalizado%20impressao%203d
+- demanda recorrente por itens funcionais ou personalizados;
+- viabilidade no pipeline atual da V1;
+- baixo risco de depender de geometria fixa ou arquivos externos;
+- diferenca clara entre inspiracao de mercado e implementacao original do Forja3D.
 
 ## Oportunidades Identificadas
 

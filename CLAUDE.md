@@ -38,7 +38,7 @@ public/fonts/      ← 19 TTFs para OpenSCAD WASM (sem CDN)
 - **Após cada feature:** atualizar PLANO.md + memory no mesmo PR
 
 ## Slash commands disponíveis
-- `/cad-3d` — expert em OpenSCAD, STL, algoritmos de polígono, MakerWorld
+- `/cad-3d` — expert em OpenSCAD, STL e algoritmos de polígono
 
 ## Documentação viva
 - `docs/PLANO.md` — estado atual, histórico, próximos passos
