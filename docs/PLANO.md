@@ -164,6 +164,14 @@ Detalhes: [MARKET_RESEARCH.md](MARKET_RESEARCH.md).
 
 **Solução:** documentação principal sincronizada em 2026-05-12 com a árvore atual, modelos existentes e dívidas técnicas reais.
 
+### 6. SVG de QR Code importava como bloco único no fatiador
+
+**Erro/Sintoma:** downloads SVG de QR Code Pix e QR Code genérico eram importados em fatiadores como um bloco preenchido, sem preservar os módulos do QR.
+
+**Causa:** o SVG gerado pela biblioteca incluía um fundo branco preenchido e representava os módulos escuros como traços, o que alguns fatiadores interpretam como massa única.
+
+**Solução:** `QrAssetExporter` passou a gerar SVG próprio com fundo transparente e módulos escuros como elementos vetoriais `rect`, sem alterar PNG ou STL.
+
 ## Próximos Passos
 
 ### P0 — Fluxo Git e Deploy desta Atualização
@@ -266,3 +274,4 @@ npm run dev
 | 2026-05-12 | Arquitetura: geração de conteúdo/assets QR movida para ports e adapters, removendo imports de infraestrutura/lib externa do caso de uso |
 | 2026-05-12 | Produto: Porta Tag NFC (`nfc-tag-keychain`) adicionado ao catálogo com template OpenSCAD próprio |
 | 2026-05-12 | Produto: Chaveiro NFC atualizado com bolso interno como padrão e modo opcional de recesso adesivo/resina |
+| 2026-05-13 | Correção: SVG de QR Code Pix e QR Code genérico passa a exportar módulos vetoriais sem fundo preenchido |
