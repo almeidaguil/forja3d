@@ -15,7 +15,7 @@ Site ao vivo: https://almeidaguil.github.io/forja3d/
 | Husky + lint-staged + commitlint | ✅ Completo |
 | CI em PRs para `develop` e `main` | ✅ Completo |
 | Deploy automático GitHub Pages em `main` | ✅ Completo |
-| Catálogo estático de modelos JSON | ✅ 5 modelos |
+| Catálogo estático de modelos JSON | ✅ 6 modelos |
 | Home com cards por categoria | ✅ Completo |
 | ModelEditor | ✅ Funcional |
 | ParameterForm dinâmico | ✅ Completo |
@@ -27,6 +27,7 @@ Site ao vivo: https://almeidaguil.github.io/forja3d/
 | Cortador + Carimbo | ✅ Produção, dois STLs |
 | Carimbo com Potrace | ✅ Produção |
 | Chaveiro com Texto | ✅ Produção |
+| Chaveiro NFC | ✅ Produção |
 | QR Code Pix | ✅ Produção |
 | QR Code genérico | ✅ Produção |
 | Roteamento por URL | ✅ Completo |
@@ -56,6 +57,7 @@ Site ao vivo: https://almeidaguil.github.io/forja3d/
 | Cortador de Biscoito | `cookie-cutter` | Canvas tracer + OpenSCAD WASM | STL |
 | Carimbo | `stamp` | Potrace WASM + Three.js | STL |
 | Chaveiro com Texto | `keychain` | OpenSCAD WASM + fontes TTF locais | STL |
+| Chaveiro NFC | `nfc-tag-keychain` | OpenSCAD WASM + fontes TTF locais | STL |
 | QR Code Pix | `qr-pix` | EMV BR Code + qrcode + Three.js | STL, SVG, PNG |
 | QR Code | `qr-code` | qrcode + Three.js | STL, SVG, PNG |
 
@@ -81,15 +83,17 @@ Observação: não existe `src/domain/` físico na V1 atual. Os tipos de domíni
 - `useModelGenerator` chama `generateModel` sem importar `src/infrastructure`.
 - `generateModel` recebe portas de QR (`IQrContentBuilder` e `IQrAssetExporter`) e não importa `src/infrastructure` nem `qrcode` diretamente.
 
-### Pesquisa Mafagrafos
+### Pesquisa de Mercado
 
-A análise de produto sobre a Mafagrafos registrou oportunidades em chaveiros, porta tag NFC, ornamentos com nome, letreiros e cortadores temáticos.
+A análise de produto sobre modelos personalizados registrou oportunidades em chaveiros, chaveiro NFC, ornamentos com nome, letreiros, cortadores temáticos, suportes para celular e organizadores.
 
-Decisão tomada: primeiro concluir a P1 de arquitetura, depois iniciar a próxima feature de produto.
+Decisão executada: a P1 de arquitetura foi concluída antes da nova feature de produto.
 
-Próxima feature recomendada: **Porta tag NFC / chaveiro NFC parametrizado**.
+Feature de produto concluída nesta branch: **Porta tag NFC / chaveiro NFC parametrizado**.
 
-Detalhes e fontes: [MAFAGRAFOS_RESEARCH.md](MAFAGRAFOS_RESEARCH.md).
+Próxima feature recomendada após o NFC: **Suporte para celular/tablet parametrizável**.
+
+Detalhes: [MARKET_RESEARCH.md](MARKET_RESEARCH.md).
 
 ### Fluxos Principais
 
@@ -97,6 +101,7 @@ Detalhes e fontes: [MAFAGRAFOS_RESEARCH.md](MAFAGRAFOS_RESEARCH.md).
 - **Cortador + Carimbo:** gera STL do cortador via OpenSCAD e STL do carimbo via Potrace com tolerância de encaixe.
 - **Carimbo:** imagem → Potrace WASM multi-path → Three.js ExtrudeGeometry → STL.
 - **Chaveiro:** texto e parâmetros → template SCAD → fonte TTF local → OpenSCAD WASM → STL.
+- **Chaveiro NFC:** texto, formato, tipo de encaixe NFC e borda para resina → template SCAD → fonte TTF local → OpenSCAD WASM → STL.
 - **QR Code Pix:** payload Pix EMV BR Code client-side → matriz QR → geometria 3D → STL/SVG/PNG.
 - **QR Code genérico:** link, texto ou Wi-Fi → matriz QR → geometria 3D → STL/SVG/PNG.
 
@@ -174,10 +179,10 @@ Detalhes e fontes: [MAFAGRAFOS_RESEARCH.md](MAFAGRAFOS_RESEARCH.md).
 - Cobrir fluxos OpenSCAD com chaveiro de texto usando builders fake.
 - Manter `application` sem imports diretos de `infrastructure`.
 
-### P2 — Porta Tag NFC / Chaveiro NFC Parametrizado
+### P2 — Validar Chaveiro NFC em Produção
 
-- Criar novo modelo parametrizado inspirado na pesquisa Mafagrafos.
-- Suportar formatos simples, texto curto em relevo, furo para argola e cavidade para tag NFC.
+- Testar geração do modelo `nfc-tag-keychain` no GitHub Pages após deploy.
+- Ajustar dimensões padrão com base em uma tag NFC física real.
 - Manter V1 sem backend, sem leitura/gravação NFC e sem pagamentos.
 
 ### P3 — Worker para OpenSCAD WASM
@@ -204,7 +209,7 @@ Detalhes e fontes: [MAFAGRAFOS_RESEARCH.md](MAFAGRAFOS_RESEARCH.md).
 | React Router para rotas da V1 | Decidido e implementado |
 | Injeção de dependências na raiz | Decidido e implementado |
 | QR SVG/PNG e Pix via ports de application | Decidido e implementado |
-| Porta Tag NFC como próxima feature de produto | Decidido, pendente |
+| Porta Tag NFC como feature de produto | Decidido e implementado |
 | Web Worker para OpenSCAD | Decidido, pendente |
 
 ## Retomada de Sessão
@@ -254,8 +259,10 @@ npm run dev
 | 2026-05-12 | Roteamento por URL com React Router: Home em `/`, editores em `/editor/:slug` e fallback para GitHub Pages |
 | 2026-05-12 | Segurança: audit zerado com troca de `potrace`/Jimp por `esm-potrace-wasm`, atualização de `postcss` e transitivos |
 | 2026-05-12 | Estabilidade: `PotraceStampBuilder` limita a entrada do Potrace WASM a 96 px no maior lado e usa saída de paths para evitar erro `offset is out of bounds` |
-| 2026-05-12 | Produto: pesquisa Mafagrafos registrada e Porta Tag NFC escolhido como próxima feature após a P1 arquitetural |
+| 2026-05-12 | Produto: pesquisa de mercado registrada e Chaveiro NFC escolhido como próxima feature após a P1 arquitetural |
 | 2026-05-12 | Arquitetura: dependências concretas movidas para `src/app/dependencies.ts` e injetadas a partir da raiz |
 | 2026-05-12 | Testes: Vitest adicionado com cobertura de caracterização para QR Link, Texto, Wi-Fi e Pix em `generateModel` |
 | 2026-05-12 | Testes: regressão do hook `useModelGenerator` cobre o repasse completo das dependências de QR |
 | 2026-05-12 | Arquitetura: geração de conteúdo/assets QR movida para ports e adapters, removendo imports de infraestrutura/lib externa do caso de uso |
+| 2026-05-12 | Produto: Porta Tag NFC (`nfc-tag-keychain`) adicionado ao catálogo com template OpenSCAD próprio |
+| 2026-05-12 | Produto: Chaveiro NFC atualizado com bolso interno como padrão e modo opcional de recesso adesivo/resina |

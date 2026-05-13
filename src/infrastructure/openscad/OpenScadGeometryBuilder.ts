@@ -359,6 +359,35 @@ interface KeychainParams {
   fontName?: string  // OpenSCAD font name — must match KEYCHAIN_FONTS entry
 }
 
+interface NfcTagKeychainParams {
+  text: string
+  shape: string
+  nfcMountMode: string
+  width: number
+  height: number
+  thickness: number
+  textDepth: number
+  fontSize: number
+  holeDiameter: number
+  nfcDiameter: number
+  nfcClearance: number
+  cavityDepth: number
+  coverThickness: number
+  topCoverThickness: number
+  epoxyBorder: boolean
+  borderHeight: number
+  fontName?: string
+}
+
+const NFC_MIN_WIDTH = 42
+const NFC_MAX_WIDTH = 80
+const NFC_MIN_HEIGHT = 54
+const NFC_MAX_HEIGHT = 90
+const NFC_MIN_TAG_DIAMETER = 18
+const NFC_MAX_TAG_DIAMETER = 35
+const NFC_SIDE_WALL = 2
+const NFC_HOLE_GAP = 2
+
 function generateKeychainScad(p: KeychainParams): string {
   const { text, text2, fontSize, shape, thickness, textDepth, padding, holeDiameter, addNfc } = p
   const hasText2 = text2.trim().length > 0
@@ -436,6 +465,222 @@ ${addNfc ? `
   // Recesso para tag NFC no verso (⌀26mm × 1.2mm)
   translate([0, 0, -0.1])
     cylinder(h = 1.3, d = 26);` : ''}
+}
+`
+}
+
+function escapeScadText(value: string): string {
+  return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+}
+
+function makeStarPoints(width: number, height: number): string {
+  const outerRadius = Math.min(width, height) / 2
+  const innerRadius = outerRadius * 0.45
+
+  return Array.from({ length: 10 }, (_, index) => {
+    const angle = -Math.PI / 2 + (index * Math.PI) / 5
+    const radius = index % 2 === 0 ? outerRadius : innerRadius
+    const x = Math.cos(angle) * radius
+    const y = Math.sin(angle) * radius
+    return `[${x.toFixed(2)}, ${y.toFixed(2)}]`
+  }).join(', ')
+}
+
+function buildNfcTagShapeModule(shape: string, width: number, height: number): string {
+  const normalizedShape = shape.toLowerCase()
+  const cornerRadius = Math.min(width, height) * 0.14
+
+  if (normalizedShape === 'round' || normalizedShape === 'redondo') {
+    return `circle(d = ${Math.min(width, height).toFixed(2)}, $fn = 96)`
+  }
+  if (normalizedShape.includes('hex')) {
+    return `circle(d = ${Math.min(width, height).toFixed(2)}, $fn = 6)`
+  }
+  if (normalizedShape.includes('12')) {
+    return `circle(d = ${Math.min(width, height).toFixed(2)}, $fn = 12)`
+  }
+  if (normalizedShape.includes('estrela') || normalizedShape.includes('star')) {
+    return `polygon(points = [${makeStarPoints(width, height)}])`
+  }
+  if (normalizedShape.includes('cora') || normalizedShape.includes('heart')) {
+    return `union() {
+      translate([${(-width * 0.18).toFixed(2)}, ${(height * 0.13).toFixed(2)}])
+        circle(d = ${(width * 0.46).toFixed(2)}, $fn = 48);
+      translate([${(width * 0.18).toFixed(2)}, ${(height * 0.13).toFixed(2)}])
+        circle(d = ${(width * 0.46).toFixed(2)}, $fn = 48);
+      polygon(points = [
+        [${(-width * 0.43).toFixed(2)}, ${(height * 0.08).toFixed(2)}],
+        [${(width * 0.43).toFixed(2)}, ${(height * 0.08).toFixed(2)}],
+        [0, ${(-height * 0.46).toFixed(2)}]
+      ]);
+    }`
+  }
+  if (normalizedShape === 'shield' || normalizedShape === 'escudo') {
+    return `polygon(points = [
+      [${(-width / 2).toFixed(2)}, ${(height * 0.26).toFixed(2)}],
+      [${(-width * 0.35).toFixed(2)}, ${(height / 2).toFixed(2)}],
+      [${(width * 0.35).toFixed(2)}, ${(height / 2).toFixed(2)}],
+      [${(width / 2).toFixed(2)}, ${(height * 0.26).toFixed(2)}],
+      [${(width * 0.34).toFixed(2)}, ${(-height * 0.28).toFixed(2)}],
+      [0, ${(-height / 2).toFixed(2)}],
+      [${(-width * 0.34).toFixed(2)}, ${(-height * 0.28).toFixed(2)}]
+    ])`
+  }
+
+  return `offset(r = ${cornerRadius.toFixed(2)}, $fn = 32)
+    square([${(width - 2 * cornerRadius).toFixed(2)}, ${(height - 2 * cornerRadius).toFixed(2)}], center = true)`
+}
+
+function finiteNumber(value: number, fallback: number, min: number, max: number): number {
+  if (!Number.isFinite(value)) {
+    return fallback
+  }
+  return Math.min(max, Math.max(min, value))
+}
+
+function booleanValue(value: unknown, fallback: boolean): boolean {
+  if (typeof value === 'boolean') {
+    return value
+  }
+  if (typeof value === 'string') {
+    return value.toLowerCase() === 'true'
+  }
+  return fallback
+}
+
+function isRadialNfcShape(shape: string): boolean {
+  const normalizedShape = shape.toLowerCase()
+  return normalizedShape === 'round'
+    || normalizedShape === 'redondo'
+    || normalizedShape.includes('hex')
+    || normalizedShape.includes('12')
+    || normalizedShape.includes('estrela')
+    || normalizedShape.includes('star')
+}
+
+function fitNfcTagDiameter(
+  desiredDiameter: number,
+  profileWidth: number,
+  profileHeight: number,
+  holeDiameter: number,
+): number {
+  const tagY = -profileHeight * 0.08
+  const holeY = profileHeight / 2 - holeDiameter / 2 - 3
+  const maxByWidth = profileWidth - NFC_SIDE_WALL * 2
+  const maxByBottom = (tagY + profileHeight / 2 - NFC_SIDE_WALL) * 2
+  const maxByHole = (holeY - holeDiameter / 2 - NFC_HOLE_GAP - tagY) * 2
+  const availableDiameter = Math.max(
+    NFC_MIN_TAG_DIAMETER,
+    Math.min(maxByWidth, maxByBottom, maxByHole),
+  )
+
+  return Math.min(desiredDiameter, availableDiameter)
+}
+
+function normalizeNfcTagKeychainParams(params: NfcTagKeychainParams): NfcTagKeychainParams {
+  const shape = params.shape || 'Quadrado arredondado'
+  const width = finiteNumber(params.width, 45, NFC_MIN_WIDTH, NFC_MAX_WIDTH)
+  const height = finiteNumber(params.height, 58, NFC_MIN_HEIGHT, NFC_MAX_HEIGHT)
+  const profileSize = isRadialNfcShape(shape) ? Math.min(width, height) : undefined
+  const profileWidth = profileSize ?? width
+  const profileHeight = profileSize ?? height
+  const nfcClearance = finiteNumber(params.nfcClearance, 0.4, 0, 1.2)
+  const holeDiameter = finiteNumber(params.holeDiameter, 5, 3, 9)
+  const desiredTagDiameter = finiteNumber(
+    params.nfcDiameter + nfcClearance * 2,
+    25.8,
+    NFC_MIN_TAG_DIAMETER,
+    NFC_MAX_TAG_DIAMETER + nfcClearance * 2,
+  )
+  const tagDiameter = fitNfcTagDiameter(
+    desiredTagDiameter,
+    profileWidth,
+    profileHeight,
+    holeDiameter,
+  )
+
+  return {
+    ...params,
+    shape,
+    width,
+    height,
+    thickness: finiteNumber(params.thickness, 4, 2.5, 8),
+    textDepth: finiteNumber(params.textDepth, 1.2, 0.6, 3),
+    fontSize: finiteNumber(params.fontSize, 8, 4, 16),
+    holeDiameter,
+    nfcDiameter: Math.max(NFC_MIN_TAG_DIAMETER, tagDiameter - nfcClearance * 2),
+    nfcClearance,
+    cavityDepth: finiteNumber(params.cavityDepth, 1.2, 0.6, 3),
+    coverThickness: finiteNumber(params.coverThickness, 0.8, 0.4, 2),
+    topCoverThickness: finiteNumber(params.topCoverThickness, 0.8, 0.4, 2),
+    borderHeight: finiteNumber(params.borderHeight, 1.2, 0.4, 3),
+  }
+}
+
+function generateNfcTagKeychainScad(p: NfcTagKeychainParams): string {
+  const params = normalizeNfcTagKeychainParams(p)
+  const profileSize = isRadialNfcShape(params.shape) ? Math.min(params.width, params.height) : undefined
+  const width = profileSize ?? params.width
+  const height = profileSize ?? params.height
+  const isExposedRecess = params.nfcMountMode.toLowerCase().includes('recesso')
+  const bottomCoverThickness = params.coverThickness
+  const topCoverThickness = params.topCoverThickness
+  const pocketThickness = bottomCoverThickness + params.cavityDepth + topCoverThickness
+  const totalThickness = isExposedRecess
+    ? Math.max(params.thickness, params.cavityDepth + 0.8)
+    : Math.max(params.thickness, pocketThickness)
+  const tagDiameter = params.nfcDiameter + params.nfcClearance * 2
+  const safeCavityDepth = isExposedRecess
+    ? Math.min(params.cavityDepth, Math.max(0.4, totalThickness - 0.4))
+    : Math.min(params.cavityDepth, Math.max(0.4, totalThickness - bottomCoverThickness - topCoverThickness))
+  const pauseHeight = bottomCoverThickness + safeCavityDepth
+  const borderHeight = params.epoxyBorder ? params.borderHeight : 0
+  const raisedHeight = Math.max(params.textDepth, borderHeight)
+  const cavityZ = isExposedRecess ? totalThickness - safeCavityDepth : bottomCoverThickness
+  const cavityCutHeight = isExposedRecess ? safeCavityDepth + raisedHeight + 0.2 : safeCavityDepth
+  const holeY = height / 2 - params.holeDiameter / 2 - 3
+  const tagY = -height * 0.08
+  const textY = -height / 2 + Math.max(8, params.fontSize * 0.9)
+  const t = escapeScadText(params.text)
+  const fontAttr = params.fontName ? `, font = "${params.fontName}"` : ''
+  const shapeModule = buildNfcTagShapeModule(params.shape, width, height)
+
+  return `
+// Porta Tag NFC — gerado pelo Forja3D
+// Fluxo recomendado: pausar a impressão em Z=${pauseHeight.toFixed(2)}mm,
+// inserir a tag NFC e continuar para fechar a tampa superior.
+$fn = 0;
+$fa = 5;
+$fs = 0.5;
+
+module tag_shape() {
+  ${shapeModule};
+}
+
+difference() {
+  union() {
+    linear_extrude(height = ${totalThickness.toFixed(2)})
+      tag_shape();
+
+${params.epoxyBorder ? `
+    translate([0, 0, ${totalThickness.toFixed(2)}])
+      linear_extrude(height = ${borderHeight.toFixed(2)})
+        difference() {
+          tag_shape();
+          offset(delta = -1.4) tag_shape();
+        }` : ''}
+
+    translate([0, ${textY.toFixed(2)}, ${totalThickness.toFixed(2)}])
+      linear_extrude(height = ${params.textDepth.toFixed(2)})
+        text("${t}", size = ${params.fontSize.toFixed(2)},
+             halign = "center", valign = "center"${fontAttr});
+  }
+
+  translate([0, ${holeY.toFixed(2)}, -0.1])
+    cylinder(h = ${(totalThickness + raisedHeight + 0.2).toFixed(2)}, d = ${params.holeDiameter.toFixed(2)}, $fn = 48);
+
+  translate([0, ${tagY.toFixed(2)}, ${cavityZ.toFixed(2)}])
+    cylinder(h = ${cavityCutHeight.toFixed(2)}, d = ${tagDiameter.toFixed(2)}, $fn = 96);
 }
 `
 }
@@ -585,6 +830,27 @@ export class OpenScadGeometryBuilder implements IGeometryBuilder {
         holeDiameter: Number(params.holeDiameter ?? 6),
         addNfc:       Boolean(params.addNfc      ?? false),
         fontName:     params.fontKey ? String(params.fontKey) : undefined,
+      })
+    }
+    if (template === 'nfc-tag-keychain') {
+      return generateNfcTagKeychainScad({
+        text:          String(params.text          ?? 'SCAN'),
+        shape:         String(params.shape         ?? 'Quadrado arredondado'),
+        nfcMountMode:  String(params.nfcMountMode  ?? 'Bolso interno (pausa)'),
+        width:         Number(params.width         ?? 45),
+        height:        Number(params.height        ?? 58),
+        thickness:     Number(params.thickness     ?? 4),
+        textDepth:     Number(params.textDepth     ?? 1.2),
+        fontSize:      Number(params.fontSize      ?? 8),
+        holeDiameter:  Number(params.holeDiameter  ?? 5),
+        nfcDiameter:   Number(params.nfcDiameter   ?? 25),
+        nfcClearance:  Number(params.nfcClearance  ?? 0.4),
+        cavityDepth:   Number(params.cavityDepth   ?? 1.2),
+        coverThickness: Number(params.coverThickness ?? 0.8),
+        topCoverThickness: Number(params.topCoverThickness ?? 0.8),
+        epoxyBorder:   booleanValue(params.epoxyBorder, true),
+        borderHeight:  Number(params.borderHeight  ?? 1.2),
+        fontName:      params.fontKey ? String(params.fontKey) : undefined,
       })
     }
     throw new Error(`Unknown scadTemplate: ${template}`)

@@ -201,3 +201,66 @@ describe('generateModel three-qr', () => {
     expect(result).toEqual({ status: 'error', error: 'QrCodeGeometryBuilder não disponível.' })
   })
 })
+
+describe('generateModel openscad', () => {
+  it('repassa os parâmetros do Porta Tag NFC para o template OpenSCAD', async () => {
+    const geometryBuilder = new CapturingGeometryBuilder()
+    const model: Model = {
+      id: 'nfc-tag-keychain',
+      slug: 'nfc-tag-keychain',
+      title: 'Porta Tag NFC',
+      description: 'Teste',
+      category: 'keychains',
+      renderStrategy: { type: 'openscad', scadTemplate: 'nfc-tag-keychain' },
+      parameters: [],
+      creditsRequired: 1,
+    }
+
+    const result = await generateModel(model, {
+      text: 'VIP',
+      shape: 'Escudo',
+      nfcMountMode: 'Recesso para adesivo/resina',
+      width: 48,
+      height: 62,
+      thickness: 4.5,
+      textDepth: 1.4,
+      fontSize: 9,
+      holeDiameter: 5.5,
+      nfcDiameter: 25,
+      nfcClearance: 0.6,
+      cavityDepth: 1.3,
+      coverThickness: 0.9,
+      topCoverThickness: 0.8,
+      epoxyBorder: false,
+      borderHeight: 1.6,
+      fontKey: 'Roboto',
+    }, undefined, {
+      imageTracer: unusedImageTracer,
+      geometryBuilder,
+    })
+
+    expect(result.status).toBe('success')
+    expect(geometryBuilder.calls[0]).toMatchObject({
+      scadTemplate: 'nfc-tag-keychain',
+      templateParams: {
+        text: 'VIP',
+        shape: 'Escudo',
+        nfcMountMode: 'Recesso para adesivo/resina',
+        width: 48,
+        height: 62,
+        thickness: 4.5,
+        textDepth: 1.4,
+        fontSize: 9,
+        holeDiameter: 5.5,
+        nfcDiameter: 25,
+        nfcClearance: 0.6,
+        cavityDepth: 1.3,
+        coverThickness: 0.9,
+        topCoverThickness: 0.8,
+        epoxyBorder: false,
+        borderHeight: 1.6,
+        fontKey: 'Roboto',
+      },
+    })
+  })
+})

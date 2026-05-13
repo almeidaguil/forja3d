@@ -1,0 +1,173 @@
+{
+  "id": "nfc-tag-keychain",
+  "slug": "nfc-tag-keychain",
+  "title": "Chaveiro NFC",
+  "description": "Crie um chaveiro NFC personalizável com bolso interno para pausa de impressão ou recesso para adesivo/resina.",
+  "category": "keychains",
+  "renderStrategy": {
+    "type": "openscad",
+    "scadTemplate": "nfc-tag-keychain"
+  },
+  "creditsRequired": 1,
+  "parameters": [
+    {
+      "key": "text",
+      "type": "string",
+      "label": "Texto em relevo",
+      "default": "SCAN"
+    },
+    {
+      "key": "shape",
+      "type": "select",
+      "label": "Formato",
+      "default": "Quadrado arredondado",
+      "options": ["Quadrado arredondado", "Redondo", "Coração", "Hexágono", "Estrela", "12 lados", "Escudo"]
+    },
+    {
+      "key": "nfcMountMode",
+      "type": "select",
+      "label": "Tipo de encaixe NFC",
+      "default": "Bolso interno (pausa)",
+      "options": ["Bolso interno (pausa)", "Recesso para adesivo/resina"]
+    },
+    {
+      "key": "width",
+      "type": "number",
+      "label": "Largura",
+      "default": 45,
+      "min": 42,
+      "max": 80,
+      "step": 1,
+      "unit": "mm"
+    },
+    {
+      "key": "height",
+      "type": "number",
+      "label": "Altura",
+      "default": 58,
+      "min": 54,
+      "max": 90,
+      "step": 1,
+      "unit": "mm"
+    },
+    {
+      "key": "thickness",
+      "type": "number",
+      "label": "Espessura da base",
+      "default": 4,
+      "min": 2.5,
+      "max": 8,
+      "step": 0.5,
+      "unit": "mm"
+    },
+    {
+      "key": "textDepth",
+      "type": "number",
+      "label": "Altura do relevo",
+      "default": 1.2,
+      "min": 0.6,
+      "max": 3,
+      "step": 0.1,
+      "unit": "mm"
+    },
+    {
+      "key": "fontSize",
+      "type": "number",
+      "label": "Tamanho da fonte",
+      "default": 8,
+      "min": 4,
+      "max": 16,
+      "step": 0.5,
+      "unit": "mm"
+    },
+    {
+      "key": "holeDiameter",
+      "type": "number",
+      "label": "Diâmetro do furo",
+      "default": 5,
+      "min": 3,
+      "max": 9,
+      "step": 0.5,
+      "unit": "mm"
+    },
+    {
+      "key": "nfcDiameter",
+      "type": "number",
+      "label": "Diâmetro da tag NFC",
+      "default": 25,
+      "min": 18,
+      "max": 35,
+      "step": 0.5,
+      "unit": "mm"
+    },
+    {
+      "key": "nfcClearance",
+      "type": "number",
+      "label": "Folga da tag",
+      "default": 0.4,
+      "min": 0,
+      "max": 1.2,
+      "step": 0.1,
+      "unit": "mm"
+    },
+    {
+      "key": "cavityDepth",
+      "type": "number",
+      "label": "Espessura da tag",
+      "default": 1.2,
+      "min": 0.6,
+      "max": 3,
+      "step": 0.1,
+      "unit": "mm"
+    },
+    {
+      "key": "coverThickness",
+      "type": "number",
+      "label": "Base abaixo da tag",
+      "default": 0.8,
+      "min": 0.4,
+      "max": 2,
+      "step": 0.1,
+      "unit": "mm"
+    },
+    {
+      "key": "topCoverThickness",
+      "type": "number",
+      "label": "Tampa superior",
+      "default": 0.8,
+      "min": 0.4,
+      "max": 2,
+      "step": 0.1,
+      "unit": "mm"
+    },
+    {
+      "key": "epoxyBorder",
+      "type": "boolean",
+      "label": "Borda para resina",
+      "default": true
+    },
+    {
+      "key": "borderHeight",
+      "type": "number",
+      "label": "Altura da borda",
+      "default": 1.2,
+      "min": 0.4,
+      "max": 3,
+      "step": 0.1,
+      "unit": "mm"
+    },
+    {
+      "key": "fontKey",
+      "type": "select",
+      "label": "Fonte",
+      "default": "NotoSans",
+      "options": ["NotoSans", "Roboto", "OpenSans", "Montserrat", "Oswald", "Anton", "BebasNeue", "Righteous"]
+    },
+    {
+      "key": "color",
+      "type": "color",
+      "label": "Cor do preview",
+      "default": "#22c55e"
+    }
+  ]
+}
