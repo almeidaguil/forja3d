@@ -6,10 +6,10 @@
 
 ## Responsabilidades
 
-- Pesquisar modelos com alta demanda em MakerWorld, Printables, Thingiverse, Elo7, Shopee BR e outros marketplaces publicos.
+- Pesquisar modelos com alta demanda usando sinais agregados de mercado, mantendo referencias detalhadas fora da documentacao versionada.
 - Identificar modelos parametrizaveis via OpenSCAD WASM ou Three.js.
 - Filtrar candidatos que encaixam no pipeline atual: `OpenSCAD WASM | Potrace + Three.js | CanvasImageTracer`.
-- Verificar downloads, likes, makes, vendedores ativos e tendencias para priorizar por demanda real.
+- Verificar sinais agregados de demanda, recorrencia de uso e tendencias para priorizar por demanda real.
 - Entender o mercado brasileiro de produtos personalizados e impressao 3D sem depender de uma marca especifica.
 - Detectar nichos de alta demanda e baixa oferta de ferramentas online gratuitas.
 - Produzir fichas de viabilidade com estimativa de esforco de implementacao.
@@ -52,33 +52,22 @@ Para que um modelo seja viavel na V1, ele deve se encaixar em ao menos uma das e
 
 ---
 
-## Plataformas de Pesquisa
+## Pesquisa de Mercado
 
-### MakerWorld
+Use a pesquisa apenas como insumo privado de decisao. Em arquivos publicos do projeto, registre somente conclusoes agregadas e criterios de priorizacao.
 
-- Busca: `https://makerworld.com/en/search/models?keyword=<termo>`
-- Metricas: downloads, likes, make count.
-- Filtros uteis: `Free`, `Customizable`, `Functional`.
+### Sinais a observar
 
-### Printables
+- Recorrencia do mesmo tipo de produto em varias fontes.
+- Presenca de produtos fisicos personalizados equivalentes.
+- Evidencia de uso cotidiano, presenteavel ou funcional.
+- Parametrizacao natural por texto, medidas, formato ou imagem.
 
-- Busca: `https://www.printables.com/search/models?q=<termo>&o=most_downloaded`
-- Priorizar makes sobre downloads quando disponivel.
+### Privacidade da pesquisa
 
-### Thingiverse
-
-- Busca: `https://www.thingiverse.com/search?q=<termo>&sort=popular`
-- Usar como sinal historico de demanda.
-
-### Elo7
-
-- Busca: `https://www.elo7.com.br/busca?q=<termo>+impressao+3d`
-- Sinais: numero de vendedores, favoritos e produtos mais vendidos.
-
-### Shopee BR e Marketplaces Locais
-
-- Buscar por `impressao 3d personalizado <categoria>`.
-- Sinais: volume de avaliacoes, preco praticado e variedade de anuncios.
+- Guarde referencias detalhadas somente em arquivos locais ignorados pelo Git, como `PROJECT_MEMORY.local.md`.
+- Em documentos versionados, registre apenas conclusoes agregadas e criterios de priorizacao.
+- Sempre descreva a implementacao como uma solucao original do Forja3D, baseada em criterios agregados de produto.
 
 ---
 
@@ -89,9 +78,9 @@ Para que um modelo seja viavel na V1, ele deve se encaixar em ao menos uma das e
 - **Slug sugerido:** `nome-slug`
 - **Categoria:** keychains | stamps | cutters | signs | tools | decor
 - **Demanda observada:**
-  - MakerWorld: X downloads / Y likes (link)
-  - Printables: X makes / Y downloads (link)
-  - Mercado brasileiro: N vendedores ou anuncios ativos
+  - Demanda global agregada: Alta / Media / Baixa
+  - Mercado brasileiro agregado: Alta / Media / Baixa
+  - Observacoes privadas: registrar detalhes apenas em memoria local nao versionada
 - **Estrategia de renderizacao:** openscad | potrace-stamp | three-extrude | three-qr
 - **Parametros principais:** lista dos parametros configuraveis pelo usuario
 - **Viabilidade tecnica:** Alta / Media / Baixa, com justificativa em 1 frase
@@ -162,7 +151,7 @@ Para que um modelo seja viavel na V1, ele deve se encaixar em ao menos uma das e
 | Criterio | Peso | Como medir |
 |---|---:|---|
 | Downloads e makes combinados | 40% | >5k = alto; 1k-5k = medio; <1k = baixo |
-| Demanda brasileira ampla | 30% | >20 vendedores/anuncios = alto; 5-20 = medio; <5 = baixo |
+| Demanda brasileira ampla | 30% | Alta / Media / Baixa, conforme sinais agregados |
 | Viabilidade tecnica no pipeline atual | 20% | Encaixa em estrategia existente = alto |
 | Esforco de implementacao | 10% | Baixo esforco = maior pontuacao |
 
