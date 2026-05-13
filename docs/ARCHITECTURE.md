@@ -52,6 +52,7 @@ Modelos atuais:
 | `cookie-cutter.json` | `cookie-cutter` | `three-extrude` com imagem |
 | `stamp.json` | `stamp` | `potrace-stamp` |
 | `keychain.json` | `keychain` | `openscad` com template `keychain` |
+| `nfc-tag-keychain.json` | `nfc-tag-keychain` | `openscad` com template `nfc-tag-keychain` |
 | `qr-pix.json` | `qr-pix` | `three-qr` |
 | `qr-code.json` | `qr-code` | `three-qr` |
 
@@ -148,6 +149,14 @@ O roteador usa `basename` derivado de `import.meta.env.BASE_URL`, mantendo compa
 2. `OpenScadGeometryBuilder` monta o template SCAD.
 3. A fonte TTF é carregada de `public/fonts/`.
 4. OpenSCAD WASM compila STL no cliente.
+
+### Chaveiro NFC
+
+1. Usuário informa texto, formato, dimensões e medidas da cavidade NFC.
+2. `OpenScadGeometryBuilder` monta o template SCAD `nfc-tag-keychain`.
+3. A fonte TTF é carregada de `public/fonts/`.
+4. OpenSCAD WASM compila STL no cliente.
+5. A V1 gera apenas a peça física, sem leitura ou gravação NFC.
 
 ### QR Code Pix
 
