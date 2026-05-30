@@ -36,7 +36,7 @@ function ImageUpload({ imageFile, onFileSelect }: ImageUploadProps): JSX.Element
     const file = e.target.files?.[0] ?? null
     if (!file) return
     if (!ACCEPTED_IMAGE_TYPES.some((t) => t === file.type)) {
-      setError('Formato não suportado. Use PNG, JPG ou WEBP.')
+      setError('Formato não suportado. Use PNG, JPG, WebP, GIF ou BMP.')
       return
     }
     if (file.size > MAX_IMAGE_SIZE_BYTES) {
@@ -59,7 +59,7 @@ function ImageUpload({ imageFile, onFileSelect }: ImageUploadProps): JSX.Element
           ? <img src={previewUrl} alt="preview da imagem selecionada" className="max-h-40 object-contain rounded" />
           : <>
               <span className="text-zinc-400 text-sm">Clique para selecionar uma imagem</span>
-              <span className="text-zinc-600 text-xs">PNG, JPG, WEBP — máx. 5 MB</span>
+              <span className="text-zinc-600 text-xs">PNG, JPG, WebP, GIF, BMP — máx. 5 MB</span>
             </>
         }
       </button>
@@ -90,7 +90,8 @@ interface FormPanelProps {
   onDownload: () => void
   onDownloadSecondary?: () => void
   onDownloadSvg?: () => void
-  onDownloadPng?: () => void
+  onDownloadImage?: () => void
+  imageDownloadLabel?: string
   pixCopiaCola?: string
 }
 
@@ -98,7 +99,7 @@ function FormPanel({
   model, values, imageFile, needsImage,
   isLoading, canGenerate, errorMsg, stlReady,
   onValueChange, onImageChange, onGenerate, onDownload,
-  onDownloadSecondary, onDownloadSvg, onDownloadPng, pixCopiaCola,
+  onDownloadSecondary, onDownloadSvg, onDownloadImage, imageDownloadLabel, pixCopiaCola,
 }: FormPanelProps): JSX.Element {
   return (
     <div className="space-y-6 rounded-xl border border-zinc-800 bg-zinc-900 p-6">
@@ -135,9 +136,9 @@ function FormPanel({
           Baixar SVG (vetor)
         </Button>
       )}
-      {onDownloadPng && (
-        <Button className="w-full" variant="secondary" onClick={onDownloadPng}>
-          Baixar PNG (imagem)
+      {onDownloadImage && (
+        <Button className="w-full" variant="secondary" onClick={onDownloadImage}>
+          {imageDownloadLabel ?? 'Baixar imagem'}
         </Button>
       )}
       {pixCopiaCola && (
@@ -169,13 +170,14 @@ function FormPanel({
 export function ModelEditor({ slug, onBack, modelGeneratorDeps }: ModelEditorProps): JSX.Element {
   const model = getModelBySlug(slug)
   const { values, imageFile, setValue, setImageFile } = useParameterForm(model?.parameters ?? [])
-  const { stlBuffer, secondaryStlBuffer, svgString, pngDataUrl, pixCopiaCola, isLoading, error, generate, download, downloadSecondary, downloadSvg, downloadPng } = useModelGenerator(model, values, imageFile, modelGeneratorDeps)
+  const { stlBuffer, secondaryStlBuffer, svgString, pngDataUrl, pixCopiaCola, imageDownloadLabel, isLoading, error, generate, download, downloadSecondary, downloadSvg, downloadImage } = useModelGenerator(model, values, imageFile, modelGeneratorDeps)
 
   const needsImage =
-    (model?.renderStrategy.type === 'three-extrude' ||
-     model?.renderStrategy.type === 'three-heightmap' ||
-     model?.renderStrategy.type === 'potrace-stamp') &&
-    model.renderStrategy.svgSource === 'image'
+    model?.renderStrategy.type === 'image-converter' ||
+    ((model?.renderStrategy.type === 'three-extrude' ||
+      model?.renderStrategy.type === 'three-heightmap' ||
+      model?.renderStrategy.type === 'potrace-stamp') &&
+      model.renderStrategy.svgSource === 'image')
 
   const canGenerate = !!model && (!needsImage || !!imageFile)
   const previewColor = typeof values.color === 'string' ? values.color : '#e07b54'
@@ -214,10 +216,43 @@ export function ModelEditor({ slug, onBack, modelGeneratorDeps }: ModelEditorPro
           onDownload={download}
           onDownloadSecondary={secondaryStlBuffer ? downloadSecondary : undefined}
           onDownloadSvg={svgString ? downloadSvg : undefined}
-          onDownloadPng={pngDataUrl ? downloadPng : undefined}
+          onDownloadImage={pngDataUrl ? downloadImage : undefined}
+          imageDownloadLabel={imageDownloadLabel ?? undefined}
           pixCopiaCola={pixCopiaCola ?? undefined}
         />
-        <ThreePreview stlBuffer={stlBuffer} secondaryStlBuffer={secondaryStlBuffer} color={previewColor} />
+        {model.renderStrategy.type === 'image-converter' ? (
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900 flex items-center justify-center min-h-96 lg:min-h-full p-6">
+            {pngDataUrl || svgString ? (
+              <div className="w-full h-full flex items-center justify-center">
+                {pngDataUrl && (
+                  <img
+                    src={pngDataUrl}
+                    alt="preview convertido"
+                    className="max-w-full max-h-full object-contain rounded-lg"
+                  />
+                )}
+                {svgString && !pngDataUrl && (
+                  <div
+                    className="w-full h-full rounded-lg"
+                    dangerouslySetInnerHTML={{ __html: svgString }}
+                  />
+                )}
+              </div>
+            ) : (
+              <div className="text-center space-y-3">
+                <div className="w-20 h-20 rounded-xl bg-zinc-800 mx-auto flex items-center justify-center">
+                  <svg width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+                    <rect x="4" y="4" width="24" height="24" stroke="#52525b" strokeWidth="1.5" />
+                    <path d="M8 20L14 12L20 18L24 12" stroke="#52525b" strokeWidth="1.5" strokeLinejoin="round" />
+                  </svg>
+                </div>
+                <p className="text-zinc-600 text-sm">Clique em "Gerar Preview" para ver a imagem convertida</p>
+              </div>
+            )}
+          </div>
+        ) : (
+          <ThreePreview stlBuffer={stlBuffer} secondaryStlBuffer={secondaryStlBuffer} color={previewColor} />
+        )}
       </div>
     </main>
   )

@@ -2,7 +2,7 @@
 
 > Documento vivo. Se o contexto do chat foi perdido, comece por aqui.
 
-Última atualização: 2026-05-12
+Última atualização: 2026-05-30
 
 Site ao vivo: https://almeidaguil.github.io/forja3d/
 
@@ -15,11 +15,11 @@ Site ao vivo: https://almeidaguil.github.io/forja3d/
 | Husky + lint-staged + commitlint | ✅ Completo |
 | CI em PRs para `develop` e `main` | ✅ Completo |
 | Deploy automático GitHub Pages em `main` | ✅ Completo |
-| Catálogo estático de modelos JSON | ✅ 6 modelos |
+| Catálogo estático de modelos JSON | ✅ 7 modelos |
 | Home com cards por categoria | ✅ Completo |
 | ModelEditor | ✅ Funcional |
 | ParameterForm dinâmico | ✅ Completo |
-| Upload de imagem PNG/JPG/WEBP até 5 MB | ✅ Completo |
+| Upload de imagem PNG/JPG/WEBP/GIF/BMP até 5 MB | ✅ Completo |
 | Preview 3D com Three.js | ✅ Completo |
 | Export STL | ✅ Completo |
 | Export SVG/PNG para QR Codes | ✅ Completo |
@@ -30,12 +30,13 @@ Site ao vivo: https://almeidaguil.github.io/forja3d/
 | Chaveiro NFC | ✅ Produção |
 | QR Code Pix | ✅ Produção |
 | QR Code genérico | ✅ Produção |
+| Conversor de Imagens | ✅ Produção V1 (PNG, JPG, WebP, BMP, SVG; STL opcional) |
 | Roteamento por URL | ✅ Completo |
 | Injeção de dependências na raiz | ✅ Completo |
 | Testes de caracterização para QR em `generateModel` | ✅ Completo |
 | Limpeza de camada QR em `generateModel` | ✅ Completo |
 | Web Worker para OpenSCAD WASM | 🔲 A implementar |
-| Documentação sincronizada | ✅ Atualizada em 2026-05-12 |
+| Documentação sincronizada | ✅ Atualizada em 2026-05-30 |
 
 ## O Que Já Está Feito
 
@@ -60,6 +61,7 @@ Site ao vivo: https://almeidaguil.github.io/forja3d/
 | Chaveiro NFC | `nfc-tag-keychain` | OpenSCAD WASM + fontes TTF locais | STL |
 | QR Code Pix | `qr-pix` | EMV BR Code + qrcode + Three.js | STL, SVG, PNG |
 | QR Code | `qr-code` | qrcode + Three.js | STL, SVG, PNG |
+| Conversor de Imagens | `image-converter` | Canvas + encoder BMP | PNG, JPG, WebP, BMP, SVG, STL opcional |
 
 ### Arquitetura Real da V1
 
@@ -275,3 +277,4 @@ npm run dev
 | 2026-05-12 | Produto: Porta Tag NFC (`nfc-tag-keychain`) adicionado ao catálogo com template OpenSCAD próprio |
 | 2026-05-12 | Produto: Chaveiro NFC atualizado com bolso interno como padrão e modo opcional de recesso adesivo/resina |
 | 2026-05-13 | Correção: SVG de QR Code Pix e QR Code genérico passa a exportar módulos vetoriais sem fundo preenchido |
+| 2026-05-30 | Produto: Conversor de Imagens adicionado com saída PNG/JPG/WebP/BMP/SVG e STL opcional |

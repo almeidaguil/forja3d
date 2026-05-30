@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ChangeEvent, JSX } from 'react'
+import { ACCEPTED_IMAGE_TYPES, MAX_IMAGE_SIZE_BYTES } from '../../../shared/constants'
 import type { ParameterSchema, ParameterValue } from '../../../shared/types'
 
 
@@ -168,6 +169,23 @@ function BooleanField({ param, value, onChange }: FieldProps): JSX.Element {
   )
 }
 
+function CheckboxField({ param, value, onChange }: FieldProps): JSX.Element {
+  const checked = typeof value === 'boolean' ? value : Boolean(param.default)
+  return (
+    <div className="flex items-center gap-3">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(param.key, e.target.checked)}
+        className="w-4 h-4 rounded accent-orange-500 cursor-pointer"
+      />
+      <label className="text-sm text-zinc-300 cursor-pointer select-none">
+        {param.label}
+      </label>
+    </div>
+  )
+}
+
 function SelectField({ param, value, onChange }: FieldProps): JSX.Element {
   const selected = String(value)
   return (
@@ -195,14 +213,12 @@ function ImageField({ param, onChange }: FieldProps): JSX.Element {
     const file = e.target.files?.[0]
     if (!file) return
 
-    const ACCEPTED_TYPES = ['image/png', 'image/jpeg', 'image/webp']
-    if (!ACCEPTED_TYPES.includes(file.type)) {
-      setError('Formato não suportado. Use PNG, JPG ou WEBP.')
+    if (!ACCEPTED_IMAGE_TYPES.some((type) => type === file.type)) {
+      setError('Formato não suportado. Use PNG, JPG, WebP, GIF ou BMP.')
       return
     }
 
-    const MAX_SIZE = 5 * 1024 * 1024 // 5 MB
-    if (file.size > MAX_SIZE) {
+    if (file.size > MAX_IMAGE_SIZE_BYTES) {
       setError('Imagem muito grande. Máximo: 5 MB.')
       return
     }
@@ -219,7 +235,7 @@ function ImageField({ param, onChange }: FieldProps): JSX.Element {
         <input
           ref={inputRef}
           type="file"
-          accept="image/png,image/jpeg,image/webp"
+          accept={ACCEPTED_IMAGE_TYPES.join(',')}
           onChange={handleFileChange}
           className="sr-only"
         />
@@ -243,16 +259,24 @@ function ParameterField({ param, value, onChange }: FieldProps): JSX.Element {
     return <FontPickerField param={param} value={value} onChange={onChange} />
   }
   switch (param.type) {
-    case 'number':  return <NumberField  param={param} value={value} onChange={onChange} />
-    case 'color':   return <ColorField   param={param} value={value} onChange={onChange} />
-    case 'boolean': return <BooleanField param={param} value={value} onChange={onChange} />
-    case 'select':  return <SelectField  param={param} value={value} onChange={onChange} />
-    case 'image':   return <ImageField   param={param} value={value} onChange={onChange} />
-    default:        return <StringField  param={param} value={value} onChange={onChange} />
+    case 'number':    return <NumberField   param={param} value={value} onChange={onChange} />
+    case 'color':     return <ColorField    param={param} value={value} onChange={onChange} />
+    case 'boolean':   return <BooleanField  param={param} value={value} onChange={onChange} />
+    case 'checkbox':  return <CheckboxField param={param} value={value} onChange={onChange} />
+    case 'select':    return <SelectField   param={param} value={value} onChange={onChange} />
+    case 'image':     return <ImageField    param={param} value={value} onChange={onChange} />
+    default:          return <StringField   param={param} value={value} onChange={onChange} />
   }
 }
 
 function isParameterVisible(param: ParameterSchema, values: Record<string, ParameterValue>): boolean {
+  // Handle conditional display based on param.condition field
+  if (param.condition) {
+    const conditionValue = values[param.condition]
+    if (!conditionValue) return false
+  }
+
+  // Existing QR-specific visibility rules
   if (param.key === 'qrContent') return values.qrType !== 'Wi-Fi'
   if (param.key === 'wifiPassword') {
     return values.qrType === 'Wi-Fi' && values.wifiSecurity !== 'Sem senha'

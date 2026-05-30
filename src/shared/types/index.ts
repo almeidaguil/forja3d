@@ -1,4 +1,4 @@
-export type ParameterType = 'string' | 'number' | 'boolean' | 'select' | 'color' | 'image'
+export type ParameterType = 'string' | 'number' | 'boolean' | 'select' | 'color' | 'image' | 'checkbox'
 
 export type ParameterValue = string | number | boolean
 
@@ -8,6 +8,7 @@ export type RenderStrategy =
   | { type: 'three-heightmap'; svgSource: 'image' }
   | { type: 'potrace-stamp'; svgSource: 'image' }
   | { type: 'three-qr' }
+  | { type: 'image-converter'; imageProcessing: 'canvas' }
 
 export type BuiltinShape = 'circle' | 'square' | 'hexagon' | 'star'
 
@@ -17,6 +18,7 @@ export type ModelCategory =
   | 'keychains'
   | 'signs'
   | 'letters'
+  | 'utilities'
 
 export interface ParameterSchema {
   key: string
@@ -28,6 +30,7 @@ export interface ParameterSchema {
   step?: number
   options?: string[]
   unit?: string
+  condition?: string
 }
 
 export interface Model {
@@ -48,6 +51,9 @@ export interface GenerationResult {
   secondaryGeometry?: ArrayBuffer // STL binary — secundário (carimbo no modo cutter-stamp)
   svgString?: string              // SVG vector (QR Code, laser engraving)
   pngDataUrl?: string             // PNG image (QR Code, paper print)
+  downloadFileName?: string
+  downloadMimeType?: string
+  downloadLabel?: string
   pixCopiaCola?: string           // Pix payload string for bank app testing
   error?: string
 }
