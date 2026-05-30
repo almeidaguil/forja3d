@@ -34,6 +34,7 @@ Site ao vivo: https://almeidaguil.github.io/forja3d/
 | Roteamento por URL | ✅ Completo |
 | Injeção de dependências na raiz | ✅ Completo |
 | Testes de caracterização para QR em `generateModel` | ✅ Completo |
+| Testes de caracterização para imagem/OpenSCAD em `generateModel` | ✅ Completo |
 | Limpeza de camada QR em `generateModel` | ✅ Completo |
 | Web Worker para OpenSCAD WASM | 🔲 A implementar |
 | Documentação sincronizada | ✅ Atualizada em 2026-05-30 |
@@ -183,11 +184,12 @@ Detalhes: [MARKET_RESEARCH.md](MARKET_RESEARCH.md).
 - Depois do merge em `develop`, abrir PR de `develop` para `main`.
 - Confirmar deploy automático do GitHub Pages após merge em `main`.
 
-### P1 — Ampliar Testes em `generateModel`
+### P1 — Ampliar Testes em `generateModel` ✅ Concluído
 
-- Ampliar cobertura para fluxos de imagem: cortador, cortador + carimbo e carimbo Potrace.
-- Cobrir fluxos OpenSCAD com chaveiro de texto usando builders fake.
-- Manter `application` sem imports diretos de `infrastructure`.
+- Cobertura adicionada para fluxos de imagem: cortador, cortador + carimbo, carimbo Potrace e heightmap legado.
+- Cobertura adicionada para fluxos OpenSCAD com chaveiro de texto e chaveiro NFC usando builders fake.
+- Casos negativos adicionados para imagem ausente, contorno não detectado e builder Potrace indisponível.
+- `application` permanece sem imports diretos de `infrastructure`.
 
 ### P2 — Validar Chaveiro NFC em Produção
 
@@ -278,3 +280,4 @@ npm run dev
 | 2026-05-12 | Produto: Chaveiro NFC atualizado com bolso interno como padrão e modo opcional de recesso adesivo/resina |
 | 2026-05-13 | Correção: SVG de QR Code Pix e QR Code genérico passa a exportar módulos vetoriais sem fundo preenchido |
 | 2026-05-30 | Produto: Conversor de Imagens adicionado com saída PNG/JPG/WebP/BMP/SVG e STL opcional |
+| 2026-05-30 | Testes: cobertura de `generateModel` ampliada para cortador, cortador + carimbo, carimbo Potrace, heightmap legado e chaveiros OpenSCAD |
