@@ -1,0 +1,67 @@
+{
+  "id": "image-converter",
+  "slug": "image-converter",
+  "title": "Conversor de Imagens",
+  "description": "Converta suas imagens para formatos comuns e exporte como STL para impressao 3D.",
+  "category": "utilities",
+  "renderStrategy": {
+    "type": "image-converter",
+    "imageProcessing": "canvas"
+  },
+  "creditsRequired": 1,
+  "parameters": [
+    {
+      "key": "outputFormat",
+      "type": "select",
+      "label": "Formato de saida",
+      "default": "png",
+      "options": ["png", "jpg", "webp", "svg", "bmp"]
+    },
+    {
+      "key": "quality",
+      "type": "number",
+      "label": "Qualidade (%)",
+      "default": 85,
+      "min": 10,
+      "max": 100,
+      "step": 5,
+      "unit": "%"
+    },
+    {
+      "key": "scale",
+      "type": "number",
+      "label": "Escala",
+      "default": 1,
+      "min": 0.5,
+      "max": 4,
+      "step": 0.25
+    },
+    {
+      "key": "exportAsStl",
+      "type": "checkbox",
+      "label": "Exportar tambem como STL",
+      "default": false
+    },
+    {
+      "key": "stlHeight",
+      "type": "number",
+      "label": "Altura STL (mm)",
+      "default": 5,
+      "min": 1,
+      "max": 50,
+      "step": 0.5,
+      "unit": "mm",
+      "condition": "exportAsStl"
+    },
+    {
+      "key": "stlThreshold",
+      "type": "number",
+      "label": "Sensibilidade do contorno (STL)",
+      "default": 128,
+      "min": 10,
+      "max": 245,
+      "step": 1,
+      "condition": "exportAsStl"
+    }
+  ]
+}

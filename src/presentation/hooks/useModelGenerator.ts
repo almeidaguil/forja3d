@@ -9,29 +9,39 @@ export interface UseModelGeneratorReturn {
   svgString: string | null
   pngDataUrl: string | null
   pixCopiaCola: string | null
+  imageDownloadLabel: string | null
   isLoading: boolean
   error: string | null
   generate: () => Promise<void>
   download: () => void
   downloadSecondary: () => void
   downloadSvg: () => void
-  downloadPng: () => void
+  downloadImage: () => void
 }
 
 async function fileToImageData(file: File): Promise<ImageData> {
   return new Promise((resolve, reject) => {
     const img = new Image()
+    const url = URL.createObjectURL(file)
     img.onload = () => {
       const canvas = document.createElement('canvas')
       canvas.width = img.naturalWidth
       canvas.height = img.naturalHeight
       const ctx = canvas.getContext('2d')
-      if (!ctx) { reject(new Error('Canvas 2D not available')); return }
+      if (!ctx) {
+        URL.revokeObjectURL(url)
+        reject(new Error('Canvas 2D not available'))
+        return
+      }
       ctx.drawImage(img, 0, 0)
       resolve(ctx.getImageData(0, 0, canvas.width, canvas.height))
+      URL.revokeObjectURL(url)
     }
-    img.onerror = () => reject(new Error('Failed to load image'))
-    img.src = URL.createObjectURL(file)
+    img.onerror = () => {
+      URL.revokeObjectURL(url)
+      reject(new Error('Failed to load image'))
+    }
+    img.src = url
   })
 }
 
@@ -46,12 +56,15 @@ export function useModelGenerator(
   const [svgString, setSvgString] = useState<string | null>(null)
   const [pngDataUrl, setPngDataUrl] = useState<string | null>(null)
   const [pixCopiaCola, setPixCopiaCola] = useState<string | null>(null)
+  const [imageDownloadLabel, setImageDownloadLabel] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const stlRef = useRef<ArrayBuffer | null>(null)
   const secondaryStlRef = useRef<ArrayBuffer | null>(null)
   const svgRef = useRef<string | null>(null)
   const pngRef = useRef<string | null>(null)
+  const imageDownloadFileNameRef = useRef<string | null>(null)
+  const imageDownloadMimeTypeRef = useRef<string | null>(null)
 
   const generate = useCallback(async () => {
     if (!model) return
@@ -64,9 +77,9 @@ export function useModelGenerator(
 
       const result = await generateModel(model, values, imageData, deps)
 
-      if (result.status === 'success' && result.geometry) {
-        setStlBuffer(result.geometry)
-        stlRef.current = result.geometry
+      if (result.status === 'success') {
+        setStlBuffer(result.geometry ?? null)
+        stlRef.current = result.geometry ?? null
         setSecondaryStlBuffer(result.secondaryGeometry ?? null)
         secondaryStlRef.current = result.secondaryGeometry ?? null
         setSvgString(result.svgString ?? null)
@@ -74,6 +87,9 @@ export function useModelGenerator(
         setPngDataUrl(result.pngDataUrl ?? null)
         pngRef.current = result.pngDataUrl ?? null
         setPixCopiaCola(result.pixCopiaCola ?? null)
+        setImageDownloadLabel(result.downloadLabel ?? null)
+        imageDownloadFileNameRef.current = result.downloadFileName ?? null
+        imageDownloadMimeTypeRef.current = result.downloadMimeType ?? null
       } else {
         setError(result.error ?? 'Erro desconhecido na geração.')
       }
@@ -103,11 +119,14 @@ export function useModelGenerator(
     URL.revokeObjectURL(url)
   }, [model])
 
-  const downloadPng = useCallback(() => {
+  const downloadImage = useCallback(() => {
     if (!pngRef.current || !model) return
     const a = document.createElement('a')
-    a.href = pngRef.current; a.download = `${model.slug}.png`; a.click()
+    a.href = pngRef.current
+    a.download = imageDownloadFileNameRef.current ?? `${model.slug}.png`
+    a.type = imageDownloadMimeTypeRef.current ?? 'image/png'
+    a.click()
   }, [model])
 
-  return { stlBuffer, secondaryStlBuffer, svgString, pngDataUrl, pixCopiaCola, isLoading, error, generate, download, downloadSecondary, downloadSvg, downloadPng }
+  return { stlBuffer, secondaryStlBuffer, svgString, pngDataUrl, pixCopiaCola, imageDownloadLabel, isLoading, error, generate, download, downloadSecondary, downloadSvg, downloadImage }
 }

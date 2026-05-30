@@ -13,9 +13,13 @@ const CATEGORY_COLORS: Record<string, string> = {
   keychains: 'bg-yellow-500/10 text-yellow-400',
   signs: 'bg-purple-500/10 text-purple-400',
   letters: 'bg-green-500/10 text-green-400',
+  utilities: 'bg-cyan-500/10 text-cyan-400',
 }
 
 export function ModelCard({ model }: ModelCardProps) {
+  const color = model.parameters.find(p => p.key === 'color')?.default
+  const backgroundColor = typeof color === 'string' ? `${color}22` : '#18181b'
+
   return (
     <Link
       to={`/editor/${model.slug}`}
@@ -23,7 +27,7 @@ export function ModelCard({ model }: ModelCardProps) {
     >
       <div
         className="h-36 w-full rounded-lg flex items-center justify-center text-4xl"
-        style={{ backgroundColor: `${model.parameters.find(p => p.key === 'color')?.default}22` }}
+        style={{ backgroundColor }}
       >
         <ModelIcon category={model.category} />
       </div>
