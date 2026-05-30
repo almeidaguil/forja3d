@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { beforeAll, describe, expect, it } from 'vitest'
 import { generateModel, type GenerateModelDeps } from './index'
 import type { ExtrudeConfig, IGeometryBuilder } from '../../ports/IGeometryBuilder'
 import type { IQrAssetExporter } from '../../ports/IQrAssetExporter'
@@ -9,10 +9,29 @@ import type { Model } from '../../../shared/types'
 
 class CapturingGeometryBuilder implements IGeometryBuilder {
   readonly calls: ExtrudeConfig[] = []
+  readonly output: ArrayBuffer
+
+  constructor(byteLength = 8) {
+    this.output = new ArrayBuffer(byteLength)
+  }
 
   build(config: ExtrudeConfig): ArrayBuffer {
     this.calls.push(config)
-    return new ArrayBuffer(8)
+    return this.output
+  }
+}
+
+class CapturingImageTracer implements IImageTracer {
+  readonly calls: Array<{ imageData: ImageData; threshold: number }> = []
+  private readonly pathData: string
+
+  constructor(pathData = 'M 0 0 L 10 0 L 10 10 Z') {
+    this.pathData = pathData
+  }
+
+  async trace(imageData: ImageData, threshold: number) {
+    this.calls.push({ imageData, threshold })
+    return { pathData: this.pathData, width: imageData.width, height: imageData.height }
   }
 }
 
@@ -55,6 +74,33 @@ const unusedGeometryBuilder: IGeometryBuilder = {
   build() {
     return new ArrayBuffer(0)
   },
+}
+
+beforeAll(() => {
+  if (typeof ImageData !== 'undefined') return
+
+  class TestImageData {
+    readonly data: Uint8ClampedArray
+    readonly width: number
+    readonly height: number
+
+    constructor(data: Uint8ClampedArray, width: number, height: number) {
+      this.data = data
+      this.width = width
+      this.height = height
+    }
+  }
+
+  globalThis.ImageData = TestImageData as typeof ImageData
+})
+
+function createImageData(): ImageData {
+  return new ImageData(new Uint8ClampedArray([
+    255, 255, 255, 0,
+    0, 0, 0, 255,
+    0, 0, 0, 255,
+    255, 255, 255, 0,
+  ]), 2, 2)
 }
 
 function createQrModel(slug = 'qr-code'): Model {
@@ -273,6 +319,236 @@ describe('generateModel openscad', () => {
         fontKey: 'Roboto',
       },
     })
+  })
+
+  it('repassa parametros do chaveiro de texto para o template OpenSCAD', async () => {
+    const geometryBuilder = new CapturingGeometryBuilder()
+    const model: Model = {
+      id: 'keychain',
+      slug: 'keychain',
+      title: 'Chaveiro',
+      description: 'Teste',
+      category: 'keychains',
+      renderStrategy: { type: 'openscad', scadTemplate: 'keychain' },
+      parameters: [],
+      creditsRequired: 1,
+    }
+
+    const result = await generateModel(model, {
+      text: 'LUA',
+      text2: '2026',
+      fontSize: 10,
+      shape: 'circle',
+      thickness: 5,
+      textDepth: 1.2,
+      padding: 6,
+      holeDiameter: 4,
+      addNfc: true,
+      fontKey: 'Montserrat',
+    }, undefined, {
+      imageTracer: unusedImageTracer,
+      geometryBuilder,
+    })
+
+    expect(result.status).toBe('success')
+    expect(geometryBuilder.calls[0]).toMatchObject({
+      scadTemplate: 'keychain',
+      templateParams: {
+        text: 'LUA',
+        text2: '2026',
+        fontSize: 10,
+        shape: 'circle',
+        thickness: 5,
+        textDepth: 1.2,
+        padding: 6,
+        holeDiameter: 4,
+        addNfc: true,
+        fontKey: 'Montserrat',
+      },
+    })
+  })
+})
+
+describe('generateModel image models', () => {
+  function createImageModel(mode: Model['renderStrategy']): Model {
+    return {
+      id: 'image-model',
+      slug: 'image-model',
+      title: 'Modelo com Imagem',
+      description: 'Teste',
+      category: 'cutters',
+      renderStrategy: mode,
+      parameters: [],
+      creditsRequired: 1,
+    }
+  }
+
+  it('gera cortador simples com imagem rastreada', async () => {
+    const imageTracer = new CapturingImageTracer()
+    const geometryBuilder = new CapturingGeometryBuilder()
+    const imageData = createImageData()
+
+    const result = await generateModel(createImageModel({ type: 'three-extrude', svgSource: 'image' }), {
+      threshold: 100,
+      targetSize: 72,
+      cutterHeight: 11,
+      wallThickness: 1.6,
+      mode: 'Cortador',
+      tipWidth: 0.5,
+      chamferHeight: 2,
+      baseWidth: 4,
+      baseHeight: 3,
+    }, imageData, {
+      imageTracer,
+      geometryBuilder,
+    })
+
+    expect(result).toMatchObject({ status: 'success', geometry: geometryBuilder.output })
+    expect(imageTracer.calls[0].threshold).toBe(100)
+    expect(geometryBuilder.calls[0]).toMatchObject({
+      pathData: 'M 0 0 L 10 0 L 10 10 Z',
+      targetSize: 72,
+      depth: 11,
+      wallThickness: 1.6,
+      mode: 'cutter',
+      tipWidth: 0.5,
+      chamferHeight: 2,
+      baseWidth: 4,
+      baseHeight: 3,
+    })
+  })
+
+  it('retorna erro quando modelo de imagem nao recebe imagem', async () => {
+    const result = await generateModel(createImageModel({ type: 'three-extrude', svgSource: 'image' }), {}, undefined, {
+      imageTracer: new CapturingImageTracer(),
+      geometryBuilder: new CapturingGeometryBuilder(),
+    })
+
+    expect(result).toEqual({ status: 'error', error: 'Selecione uma imagem antes de gerar.' })
+  })
+
+  it('retorna erro quando nao detecta contorno no cortador', async () => {
+    const result = await generateModel(createImageModel({ type: 'three-extrude', svgSource: 'image' }), {}, createImageData(), {
+      imageTracer: new CapturingImageTracer(''),
+      geometryBuilder: new CapturingGeometryBuilder(),
+    })
+
+    expect(result).toEqual({ status: 'error', error: 'Não foi possível detectar um contorno na imagem.' })
+  })
+
+  it('gera cortador e carimbo como STLs separados', async () => {
+    const imageTracer = new CapturingImageTracer()
+    const geometryBuilder = new CapturingGeometryBuilder(8)
+    const potraceBuilder = new CapturingGeometryBuilder(16)
+    const imageData = createImageData()
+
+    const result = await generateModel(createImageModel({ type: 'three-extrude', svgSource: 'image' }), {
+      mode: 'Cortador + Carimbo',
+      targetSize: 80,
+      cutterHeight: 12,
+      wallThickness: 1.8,
+      threshold: 140,
+      stampRelief: 2.5,
+      turdSize: 6,
+      bezierSteps: 14,
+      mirror: false,
+    }, imageData, {
+      imageTracer,
+      geometryBuilder,
+      potraceBuilder,
+    })
+
+    expect(result).toMatchObject({
+      status: 'success',
+      geometry: geometryBuilder.output,
+      secondaryGeometry: potraceBuilder.output,
+    })
+    expect(geometryBuilder.calls[0]).toMatchObject({
+      targetSize: 80,
+      depth: 12,
+      wallThickness: 1.8,
+      mode: 'cutter',
+    })
+    expect(potraceBuilder.calls[0]).toMatchObject({
+      pathData: '',
+      imageData,
+      targetSize: 79.2,
+      depth: 4,
+      stampRelief: 2.5,
+      mirror: false,
+      threshold: 140,
+      turdSize: 6,
+      bezierSteps: 14,
+    })
+  })
+
+  it('gera carimbo heightmap legado com parametros de relevo', async () => {
+    const heightmapBuilder = new CapturingGeometryBuilder()
+    const imageData = createImageData()
+
+    const result = await generateModel(createImageModel({ type: 'three-heightmap', svgSource: 'image' }), {
+      targetSize: 65,
+      baseHeight: 4,
+      reliefHeight: 2,
+      stampResolution: 90,
+      mirror: false,
+    }, imageData, {
+      imageTracer: unusedImageTracer,
+      geometryBuilder: unusedGeometryBuilder,
+      heightmapBuilder,
+    })
+
+    expect(result).toMatchObject({ status: 'success', geometry: heightmapBuilder.output })
+    expect(heightmapBuilder.calls[0]).toMatchObject({
+      pathData: '',
+      targetSize: 65,
+      depth: 4,
+      stampRelief: 2,
+      stampResolution: 90,
+      mirror: false,
+      imageData,
+    })
+  })
+
+  it('gera carimbo Potrace com parametros de vetorizacao', async () => {
+    const potraceBuilder = new CapturingGeometryBuilder()
+    const imageData = createImageData()
+
+    const result = await generateModel(createImageModel({ type: 'potrace-stamp', svgSource: 'image' }), {
+      targetSize: 55,
+      baseHeight: 3,
+      reliefHeight: 1.5,
+      mirror: false,
+      threshold: 160,
+      turdSize: 8,
+      bezierSteps: 18,
+    }, imageData, {
+      imageTracer: unusedImageTracer,
+      geometryBuilder: unusedGeometryBuilder,
+      potraceBuilder,
+    })
+
+    expect(result).toMatchObject({ status: 'success', geometry: potraceBuilder.output })
+    expect(potraceBuilder.calls[0]).toMatchObject({
+      pathData: '',
+      imageData,
+      targetSize: 55,
+      depth: 3,
+      stampRelief: 1.5,
+      mirror: false,
+      threshold: 160,
+      turdSize: 8,
+      bezierSteps: 18,
+    })
+  })
+
+  it('retorna erro quando builder Potrace nao esta disponivel', async () => {
+    const result = await generateModel(createImageModel({ type: 'potrace-stamp', svgSource: 'image' }), {}, createImageData(), {
+      imageTracer: unusedImageTracer,
+      geometryBuilder: unusedGeometryBuilder,
+    })
+
+    expect(result).toEqual({ status: 'error', error: 'PotraceStampBuilder não disponível.' })
   })
 })
 
