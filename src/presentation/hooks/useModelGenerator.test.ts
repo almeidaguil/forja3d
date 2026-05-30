@@ -74,4 +74,35 @@ describe('useModelGenerator', () => {
 
     onError.mockRestore()
   })
+
+  it('cancela geracao anterior quando uma nova geracao e iniciada', async () => {
+    const cancelPending = vi.fn()
+    const delayedBuilder: IGeometryBuilder & { cancelPending: () => void } = {
+      cancelPending,
+      async build() {
+        await new Promise((resolve) => setTimeout(resolve, 20))
+        return new ArrayBuffer(8)
+      },
+    }
+    const deps: GenerateModelDeps = {
+      imageTracer,
+      geometryBuilder: delayedBuilder,
+      qrBuilder: delayedBuilder,
+      qrContentBuilder,
+      qrAssetExporter,
+    }
+
+    const { result } = renderHook(() => (
+      useModelGenerator(qrModel, { qrType: 'Link', qrContent: 'forja3d.test' }, null, deps)
+    ))
+
+    await act(async () => {
+      void result.current.generate()
+      void result.current.generate()
+      await new Promise((resolve) => setTimeout(resolve, 60))
+    })
+
+    expect(cancelPending).toHaveBeenCalledTimes(2)
+    expect(result.current.error).toBeNull()
+  })
 })

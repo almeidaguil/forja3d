@@ -1,0 +1,89 @@
+{
+  "id": "phone-stand",
+  "slug": "phone-stand",
+  "title": "Suporte para Celular",
+  "description": "Crie um suporte de mesa ajustável para celular ou tablet leve, com canal para cabo.",
+  "category": "utilities",
+  "renderStrategy": {
+    "type": "openscad",
+    "scadTemplate": "phone-stand"
+  },
+  "creditsRequired": 1,
+  "parameters": [
+    {
+      "key": "deviceWidth",
+      "type": "number",
+      "label": "Largura do aparelho (mm)",
+      "default": 75,
+      "min": 55,
+      "max": 120,
+      "step": 1,
+      "unit": "mm"
+    },
+    {
+      "key": "deviceThickness",
+      "type": "number",
+      "label": "Espessura do aparelho (mm)",
+      "default": 10,
+      "min": 6,
+      "max": 20,
+      "step": 0.5,
+      "unit": "mm"
+    },
+    {
+      "key": "standAngle",
+      "type": "number",
+      "label": "Ângulo de apoio (°)",
+      "default": 65,
+      "min": 45,
+      "max": 80,
+      "step": 1
+    },
+    {
+      "key": "baseDepth",
+      "type": "number",
+      "label": "Profundidade da base (mm)",
+      "default": 90,
+      "min": 65,
+      "max": 140,
+      "step": 1,
+      "unit": "mm"
+    },
+    {
+      "key": "lipHeight",
+      "type": "number",
+      "label": "Altura do apoio frontal (mm)",
+      "default": 12,
+      "min": 6,
+      "max": 20,
+      "step": 0.5,
+      "unit": "mm"
+    },
+    {
+      "key": "cableSlotWidth",
+      "type": "number",
+      "label": "Largura do canal de cabo (mm)",
+      "default": 14,
+      "min": 8,
+      "max": 30,
+      "step": 0.5,
+      "unit": "mm"
+    },
+    {
+      "key": "wallThickness",
+      "type": "number",
+      "label": "Espessura estrutural (mm)",
+      "default": 4,
+      "min": 3,
+      "max": 8,
+      "step": 0.5,
+      "unit": "mm"
+    },
+    {
+      "key": "color",
+      "type": "color",
+      "label": "Cor do preview",
+      "default": "#60a5fa"
+    }
+  ]
+}

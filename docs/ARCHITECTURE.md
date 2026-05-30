@@ -53,6 +53,7 @@ Modelos atuais:
 | `stamp.json` | `stamp` | `potrace-stamp` |
 | `keychain.json` | `keychain` | `openscad` com template `keychain` |
 | `nfc-tag-keychain.json` | `nfc-tag-keychain` | `openscad` com template `nfc-tag-keychain` |
+| `phone-stand.json` | `phone-stand` | `openscad` com template `phone-stand` |
 | `qr-pix.json` | `qr-pix` | `three-qr` |
 | `qr-code.json` | `qr-code` | `three-qr` |
 
@@ -87,7 +88,7 @@ Implementa renderização, vetorização e geração de payloads.
 
 | Adaptador | Tecnologia | Uso |
 |---|---|---|
-| `OpenScadGeometryBuilder` | OpenSCAD WASM | Cortador e chaveiro com texto |
+| `OpenScadGeometryBuilder` | OpenSCAD WASM + Web Worker | Cortador, chaveiros e suporte para celular |
 | `CanvasImageTracer` | Canvas API | Contorno 4-conectado para cortador |
 | `PotraceStampBuilder` | Potrace WASM + Three.js | Carimbo com detalhes vetoriais |
 | `HeightmapStampBuilder` | Three.js | Builder legado para carimbo heightmap |
@@ -157,6 +158,13 @@ O roteador usa `basename` derivado de `import.meta.env.BASE_URL`, mantendo compa
 3. A fonte TTF é carregada de `public/fonts/`.
 4. OpenSCAD WASM compila STL no cliente.
 5. A V1 gera apenas a peça física, sem leitura ou gravação NFC.
+
+### Suporte para Celular
+
+1. Usuário informa largura, espessura e ângulo de apoio.
+2. `OpenScadGeometryBuilder` monta o template SCAD `phone-stand`.
+3. OpenSCAD roda em Web Worker para manter a UI responsiva.
+4. O STL final é retornado para preview/download na UI.
 
 ### QR Code Pix
 
