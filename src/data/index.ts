@@ -6,6 +6,7 @@ import nfcTagKeychain from './models/nfc-tag-keychain.json'
 import qrPix from './models/qr-pix.json'
 import qrCode from './models/qr-code.json'
 import imageConverter from './models/image-converter.json'
+import phoneStand from './models/phone-stand.json'
 
 // V2: replace with IModelRepository backed by /api/models
 export const models: Model[] = [
@@ -16,6 +17,7 @@ export const models: Model[] = [
   qrPix as Model,
   qrCode as Model,
   imageConverter as Model,
+  phoneStand as Model,
 ]
 
 export function getModelBySlug(slug: string): Model | undefined {

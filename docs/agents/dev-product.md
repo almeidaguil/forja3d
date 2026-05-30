@@ -34,6 +34,8 @@
 | `nfc-tag-keychain` | Chaveiro NFC | OpenSCAD WASM |
 | `qr-pix` | QR Code Pix | qrcode + Three.js |
 | `qr-code` | QR Code | qrcode + Three.js |
+| `image-converter` | Conversor de Imagens | Canvas |
+| `phone-stand` | Suporte para Celular | OpenSCAD WASM |
 
 ---
 

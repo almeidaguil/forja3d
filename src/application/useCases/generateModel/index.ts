@@ -88,6 +88,17 @@ function buildOpenScadTemplateParams(
       fontKey: values.fontKey ?? 'NotoSans',
     }
   }
+  if (template === 'phone-stand') {
+    return {
+      deviceWidth: values.deviceWidth ?? 75,
+      deviceThickness: values.deviceThickness ?? 10,
+      standAngle: values.standAngle ?? 65,
+      baseDepth: values.baseDepth ?? 90,
+      lipHeight: values.lipHeight ?? 12,
+      cableSlotWidth: values.cableSlotWidth ?? 14,
+      wallThickness: values.wallThickness ?? 4,
+    }
+  }
 
   return {
     text:         values.text         ?? 'Forja3D',

@@ -15,7 +15,7 @@ Site ao vivo: https://almeidaguil.github.io/forja3d/
 | Husky + lint-staged + commitlint | ✅ Completo |
 | CI em PRs para `develop` e `main` | ✅ Completo |
 | Deploy automático GitHub Pages em `main` | ✅ Completo |
-| Catálogo estático de modelos JSON | ✅ 7 modelos |
+| Catálogo estático de modelos JSON | ✅ 8 modelos |
 | Home com cards por categoria | ✅ Completo |
 | ModelEditor | ✅ Funcional |
 | ParameterForm dinâmico | ✅ Completo |
@@ -31,12 +31,13 @@ Site ao vivo: https://almeidaguil.github.io/forja3d/
 | QR Code Pix | ✅ Produção |
 | QR Code genérico | ✅ Produção |
 | Conversor de Imagens | ✅ Produção V1 (PNG, JPG, WebP, BMP, SVG; STL opcional) |
+| Suporte para Celular | ✅ Produção V1 (STL) |
 | Roteamento por URL | ✅ Completo |
 | Injeção de dependências na raiz | ✅ Completo |
 | Testes de caracterização para QR em `generateModel` | ✅ Completo |
 | Testes de caracterização para imagem/OpenSCAD em `generateModel` | ✅ Completo |
 | Limpeza de camada QR em `generateModel` | ✅ Completo |
-| Web Worker para OpenSCAD WASM | 🔲 A implementar |
+| Web Worker para OpenSCAD WASM | ✅ Implementado |
 | Documentação sincronizada | ✅ Atualizada em 2026-05-30 |
 
 ## O Que Já Está Feito
@@ -63,6 +64,7 @@ Site ao vivo: https://almeidaguil.github.io/forja3d/
 | QR Code Pix | `qr-pix` | EMV BR Code + qrcode + Three.js | STL, SVG, PNG |
 | QR Code | `qr-code` | qrcode + Three.js | STL, SVG, PNG |
 | Conversor de Imagens | `image-converter` | Canvas + encoder BMP | PNG, JPG, WebP, BMP, SVG, STL opcional |
+| Suporte para Celular | `phone-stand` | OpenSCAD WASM | STL |
 
 ### Arquitetura Real da V1
 
@@ -251,6 +253,13 @@ npm run dev
 
 7. Acesse http://localhost:5173/forja3d/
 
+## Atualização Técnica 2026-05-30 (Worker + Phone Stand)
+
+- P2 (NFC) fica **concluído com ressalva**: geração validada em produção, pendente apenas calibração final com tag física real.
+- P3 (OpenSCAD Worker) foi implementado com mensagens tipadas, timeout e cancelamento de geração.
+- `useModelGenerator` recebeu proteção contra race condition para não sobrescrever preview com resposta antiga.
+- Novo modelo `phone-stand` adicionado no catálogo V1 com estratégia `openscad` e saída STL.
+
 ## Histórico de Sessões
 
 | Data | O que foi feito |
@@ -281,3 +290,4 @@ npm run dev
 | 2026-05-13 | Correção: SVG de QR Code Pix e QR Code genérico passa a exportar módulos vetoriais sem fundo preenchido |
 | 2026-05-30 | Produto: Conversor de Imagens adicionado com saída PNG/JPG/WebP/BMP/SVG e STL opcional |
 | 2026-05-30 | Testes: cobertura de `generateModel` ampliada para cortador, cortador + carimbo, carimbo Potrace, heightmap legado e chaveiros OpenSCAD |
+| 2026-05-30 | Performance: OpenSCAD movido para Web Worker com timeout/cancelamento e novo modelo `phone-stand` adicionado ao catálogo |

@@ -367,6 +367,47 @@ describe('generateModel openscad', () => {
       },
     })
   })
+
+  it('repassa parametros do suporte para celular para o template OpenSCAD', async () => {
+    const geometryBuilder = new CapturingGeometryBuilder()
+    const model: Model = {
+      id: 'phone-stand',
+      slug: 'phone-stand',
+      title: 'Suporte para Celular',
+      description: 'Teste',
+      category: 'utilities',
+      renderStrategy: { type: 'openscad', scadTemplate: 'phone-stand' },
+      parameters: [],
+      creditsRequired: 1,
+    }
+
+    const result = await generateModel(model, {
+      deviceWidth: 82,
+      deviceThickness: 11.5,
+      standAngle: 67,
+      baseDepth: 98,
+      lipHeight: 13,
+      cableSlotWidth: 15,
+      wallThickness: 4.5,
+    }, undefined, {
+      imageTracer: unusedImageTracer,
+      geometryBuilder,
+    })
+
+    expect(result.status).toBe('success')
+    expect(geometryBuilder.calls[0]).toMatchObject({
+      scadTemplate: 'phone-stand',
+      templateParams: {
+        deviceWidth: 82,
+        deviceThickness: 11.5,
+        standAngle: 67,
+        baseDepth: 98,
+        lipHeight: 13,
+        cableSlotWidth: 15,
+        wallThickness: 4.5,
+      },
+    })
+  })
 })
 
 describe('generateModel image models', () => {

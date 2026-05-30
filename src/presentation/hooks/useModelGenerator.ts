@@ -3,6 +3,16 @@ import type { Model, ParameterValue } from '../../shared/types'
 import { generateModel, type GenerateModelDeps } from '../../application/useCases/generateModel'
 import { exportStl } from '../../application/useCases/exportStl'
 
+interface CancelableBuilder {
+  cancelPending: () => void
+}
+
+function hasCancelableBuilder(value: unknown): value is CancelableBuilder {
+  if (typeof value !== 'object' || value === null) return false
+  const candidate = value as Record<string, unknown>
+  return typeof candidate.cancelPending === 'function'
+}
+
 export interface UseModelGeneratorReturn {
   stlBuffer: ArrayBuffer | null
   secondaryStlBuffer: ArrayBuffer | null
@@ -65,9 +75,14 @@ export function useModelGenerator(
   const pngRef = useRef<string | null>(null)
   const imageDownloadFileNameRef = useRef<string | null>(null)
   const imageDownloadMimeTypeRef = useRef<string | null>(null)
+  const generationIdRef = useRef(0)
 
   const generate = useCallback(async () => {
     if (!model) return
+    if (hasCancelableBuilder(deps.geometryBuilder)) deps.geometryBuilder.cancelPending()
+    const generationId = generationIdRef.current + 1
+    generationIdRef.current = generationId
+
     setIsLoading(true)
     setError(null)
 
@@ -76,6 +91,7 @@ export function useModelGenerator(
       if (imageFile) imageData = await fileToImageData(imageFile)
 
       const result = await generateModel(model, values, imageData, deps)
+      if (generationId !== generationIdRef.current) return
 
       if (result.status === 'success') {
         setStlBuffer(result.geometry ?? null)
@@ -94,9 +110,12 @@ export function useModelGenerator(
         setError(result.error ?? 'Erro desconhecido na geração.')
       }
     } catch (err) {
+      if (generationId !== generationIdRef.current) return
       setError(err instanceof Error ? err.message : 'Erro inesperado.')
     } finally {
-      setIsLoading(false)
+      if (generationId === generationIdRef.current) {
+        setIsLoading(false)
+      }
     }
   }, [model, values, imageFile, deps])
 

@@ -1,4 +1,5 @@
 import type { ExtrudeConfig, GeometryMode, IGeometryBuilder } from '../../application/ports/IGeometryBuilder'
+import type { OpenScadCancelRequest, OpenScadRenderRequest, OpenScadRenderResponse } from './workerProtocol'
 
 /** Minimal shape of the OpenSCAD WASM instance we use */
 interface OpenSCADInstance {
@@ -105,6 +106,7 @@ const DEFAULT_BLADE_DEPTH = 12.5     // mm - total cutter height (chamfer + blad
 const DEFAULT_STAMP_IMPRINT_HEIGHT = 3    // mm - solid stamp face plate
 const DEFAULT_STAMP_BACK_HEIGHT = 4.5     // mm - raised ring on stamp back
 const DEFAULT_STAMP_CUTTER_TOLERANCE = 0.9 // mm - gap so stamp fits inside cutter
+const OPENSCAD_WORKER_TIMEOUT_MS = 45_000
 
 /* ------------------------------------------------------------------ */
 /*  SCAD code generators                                               */
@@ -319,6 +321,59 @@ linear_extrude(height = ${depth.toFixed(2)}) {
 `
 }
 
+function generatePhoneStandScad(params: PhoneStandParams): string {
+  const deviceWidth = finiteNumber(params.deviceWidth, 75, 55, 120)
+  const deviceThickness = finiteNumber(params.deviceThickness, 10, 6, 20)
+  const standAngle = finiteNumber(params.standAngle, 65, 45, 80)
+  const baseDepth = finiteNumber(params.baseDepth, 90, 65, 140)
+  const lipHeight = finiteNumber(params.lipHeight, 12, 6, 20)
+  const cableSlotWidth = finiteNumber(params.cableSlotWidth, 14, 8, 30)
+  const wallThickness = finiteNumber(params.wallThickness, 4, 3, 8)
+
+  const sideGap = 8
+  const standWidth = deviceWidth + sideGap * 2
+  const slotHeight = Math.max(deviceThickness + 1.2, wallThickness + 2)
+  const slotDepth = 18
+  const backHeight = baseDepth * 0.88
+  const supportDepth = baseDepth * 0.6
+
+  return `
+// Suporte para celular/tablet — gerado pelo Forja3D
+$fn = 48;
+
+module stand_profile() {
+  polygon(points = [
+    [0, 0],
+    [${baseDepth.toFixed(2)}, 0],
+    [${supportDepth.toFixed(2)}, ${backHeight.toFixed(2)}],
+    [${(supportDepth - wallThickness).toFixed(2)}, ${backHeight.toFixed(2)}],
+    [${(wallThickness * 1.2).toFixed(2)}, ${(lipHeight + slotHeight).toFixed(2)}],
+    [0, ${lipHeight.toFixed(2)}]
+  ]);
+}
+
+difference() {
+  union() {
+    linear_extrude(height = ${standWidth.toFixed(2)}, center = true)
+      stand_profile();
+
+    translate([0, 0, 0])
+      linear_extrude(height = ${standWidth.toFixed(2)}, center = true)
+        square([${(slotDepth + wallThickness).toFixed(2)}, ${lipHeight.toFixed(2)}]);
+  }
+
+  // Canal de apoio para o aparelho
+  rotate([0, 0, ${(90 - standAngle).toFixed(2)}])
+    translate([${(-slotDepth).toFixed(2)}, ${lipHeight.toFixed(2)}, ${(-standWidth / 2).toFixed(2)}])
+      cube([${slotDepth.toFixed(2)}, ${slotHeight.toFixed(2)}, ${standWidth.toFixed(2)}]);
+
+  // Abertura frontal para cabo
+  translate([${(slotDepth * 0.25).toFixed(2)}, -0.1, ${(-cableSlotWidth / 2).toFixed(2)}])
+    cube([${(slotDepth * 0.8).toFixed(2)}, ${(lipHeight + 0.2).toFixed(2)}, ${cableSlotWidth.toFixed(2)}]);
+}
+`
+}
+
 /* ------------------------------------------------------------------ */
 /*  Keychain text template                                             */
 /* ------------------------------------------------------------------ */
@@ -377,6 +432,16 @@ interface NfcTagKeychainParams {
   epoxyBorder: boolean
   borderHeight: number
   fontName?: string
+}
+
+interface PhoneStandParams {
+  deviceWidth: number
+  deviceThickness: number
+  standAngle: number
+  baseDepth: number
+  lipHeight: number
+  cableSlotWidth: number
+  wallThickness: number
 }
 
 const NFC_MIN_WIDTH = 42
@@ -657,6 +722,7 @@ module tag_shape() {
   ${shapeModule};
 }
 
+
 difference() {
   union() {
     linear_extrude(height = ${totalThickness.toFixed(2)})
@@ -696,6 +762,14 @@ ${params.epoxyBorder ? `
  */
 export class OpenScadGeometryBuilder implements IGeometryBuilder {
   private modulePromise: Promise<typeof import('openscad-wasm-prebuilt')> | null = null
+  private worker: Worker | null = null
+  private requestId = 0
+  private pending = new Map<number, {
+    resolve: (value: ArrayBuffer) => void
+    reject: (reason?: unknown) => void
+    timer: ReturnType<typeof setTimeout>
+  }>()
+  private activeRequestId: number | null = null
 
   /**
    * Lazy-loads the openscad-wasm-prebuilt module (~11 MB) on first use,
@@ -709,6 +783,55 @@ export class OpenScadGeometryBuilder implements IGeometryBuilder {
     }
     const mod = await this.modulePromise
     return mod.createOpenSCAD()
+  }
+
+  cancelPending(): void {
+    if (this.activeRequestId === null) return
+    const id = this.activeRequestId
+    this.activeRequestId = null
+    const pending = this.pending.get(id)
+    if (pending) {
+      clearTimeout(pending.timer)
+      pending.reject(new Error('Geração anterior cancelada.'))
+      this.pending.delete(id)
+    }
+    const worker = this.worker
+    if (worker) {
+      const cancelMessage: OpenScadCancelRequest = { type: 'cancel', id }
+      worker.postMessage(cancelMessage)
+    }
+  }
+
+  private ensureWorker(): Worker {
+    if (this.worker) return this.worker
+
+    const worker = new Worker(new URL('./OpenScadRenderWorker.ts', import.meta.url), { type: 'module' })
+    worker.onmessage = (event: MessageEvent<OpenScadRenderResponse>) => {
+      const response = event.data
+      const pending = this.pending.get(response.id)
+      if (!pending) return
+      clearTimeout(pending.timer)
+      this.pending.delete(response.id)
+      if (this.activeRequestId === response.id) this.activeRequestId = null
+      if (response.ok) pending.resolve(response.geometry)
+      else pending.reject(new Error(response.error || 'Falha ao gerar STL no worker OpenSCAD.'))
+    }
+    worker.onerror = () => {
+      this.terminateWorker('Falha no worker OpenSCAD.')
+    }
+    this.worker = worker
+    return worker
+  }
+
+  private terminateWorker(reason: string): void {
+    this.worker?.terminate()
+    this.worker = null
+    for (const [id, pending] of this.pending) {
+      clearTimeout(pending.timer)
+      pending.reject(new Error(reason))
+      this.pending.delete(id)
+    }
+    this.activeRequestId = null
   }
 
   async build(config: ExtrudeConfig): Promise<ArrayBuffer> {
@@ -804,17 +927,7 @@ export class OpenScadGeometryBuilder implements IGeometryBuilder {
       scadCode = generateSolidScad(centeredPts, depth)
     }
 
-    // --- Render with OpenSCAD WASM ---
-    // Each render gets a fresh instance (Emscripten limitation: one callMain per instance)
-    const instance = await this.createInstance()
-    const asciiStl = await instance.renderToStl(scadCode)
-
-    if (!asciiStl || asciiStl.trim().length === 0) {
-      throw new Error('OpenSCAD produced empty output. The polygon may be invalid.')
-    }
-
-    // Convert ASCII STL to binary ArrayBuffer
-    return asciiStlToArrayBuffer(asciiStl)
+    return this.renderScad(scadCode)
   }
 
   private buildFromTemplate(template: string, params: Record<string, unknown>): string {
@@ -853,6 +966,17 @@ export class OpenScadGeometryBuilder implements IGeometryBuilder {
         fontName:      params.fontKey ? String(params.fontKey) : undefined,
       })
     }
+    if (template === 'phone-stand') {
+      return generatePhoneStandScad({
+        deviceWidth: Number(params.deviceWidth ?? 75),
+        deviceThickness: Number(params.deviceThickness ?? 10),
+        standAngle: Number(params.standAngle ?? 65),
+        baseDepth: Number(params.baseDepth ?? 90),
+        lipHeight: Number(params.lipHeight ?? 12),
+        cableSlotWidth: Number(params.cableSlotWidth ?? 14),
+        wallThickness: Number(params.wallThickness ?? 4),
+      })
+    }
     throw new Error(`Unknown scadTemplate: ${template}`)
   }
 
@@ -887,44 +1011,32 @@ export class OpenScadGeometryBuilder implements IGeometryBuilder {
   }
 
   private async renderScad(scadCode: string, fontKey?: string): Promise<ArrayBuffer> {
-    const instance = await this.createInstance()
+    try {
+      const worker = this.ensureWorker()
+      const id = ++this.requestId
+      this.activeRequestId = id
+      const fontData = (await this.getFontData(fontKey))?.data
+      const fontPayload = fontData ? new Uint8Array(fontData).buffer : undefined
+      const message: OpenScadRenderRequest = { id, scadCode, fontData: fontPayload }
 
-    // Set up font so text() works in the WASM environment.
-    // The WASM FS starts nearly empty; we create the directory tree,
-    // write the font file fetched from CDN, and configure fontconfig.
-    const raw = (instance as { getInstance?: () => {
-      FS: {
-        writeFile: (p: string, d: string | Uint8Array) => void
-        mkdir: (p: string) => void
-        readdir: (p: string) => string[]
+      return await new Promise<ArrayBuffer>((resolve, reject) => {
+        const timer = setTimeout(() => {
+          this.pending.delete(id)
+          if (this.activeRequestId === id) this.activeRequestId = null
+          this.terminateWorker('Tempo limite do OpenSCAD excedido. Tente reduzir a complexidade do modelo.')
+          reject(new Error('Tempo limite do OpenSCAD excedido. Tente reduzir a complexidade do modelo.'))
+        }, OPENSCAD_WORKER_TIMEOUT_MS)
+
+        this.pending.set(id, { resolve, reject, timer })
+        worker.postMessage(message, fontPayload ? [fontPayload] : [])
+      })
+    } catch {
+      const instance = await this.createInstance()
+      const asciiStl = await instance.renderToStl(scadCode)
+      if (!asciiStl || asciiStl.trim().length === 0) {
+        throw new Error('OpenSCAD produced empty output.')
       }
-    } }).getInstance?.()
-
-    if (raw?.FS) {
-      const fontResult = await this.getFontData(fontKey)
-      const fontData = fontResult?.data
-      if (fontData) {
-        try {
-          for (const dir of ['/usr', '/usr/share', '/usr/share/fonts', '/etc', '/etc/fonts', '/tmp', '/tmp/fontcache']) {
-            try { raw.FS.mkdir(dir) } catch { /* already exists */ }
-          }
-          raw.FS.writeFile('/usr/share/fonts/Font.ttf', fontData)
-          raw.FS.writeFile('/etc/fonts/fonts.conf',
-            '<?xml version="1.0"?>' +
-            '<!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">' +
-            '<fontconfig>' +
-            '<dir>/usr/share/fonts</dir>' +
-            '<cachedir>/tmp/fontcache</cachedir>' +
-            '</fontconfig>'
-          )
-        } catch { /* non-fatal */ }
-      }
+      return asciiStlToArrayBuffer(asciiStl)
     }
-
-    const asciiStl = await instance.renderToStl(scadCode)
-    if (!asciiStl || asciiStl.trim().length === 0) {
-      throw new Error('OpenSCAD produced empty output.')
-    }
-    return asciiStlToArrayBuffer(asciiStl)
   }
 }
