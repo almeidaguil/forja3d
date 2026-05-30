@@ -1,5 +1,6 @@
 import type { Model, ParameterValue, GenerationResult } from '../../../shared/types'
 import type { IImageTracer } from '../../ports/IImageTracer'
+import type { IImageConverter, ImageFormat } from '../../ports/IImageConverter'
 import type { GeometryMode, IGeometryBuilder } from '../../ports/IGeometryBuilder'
 import type { IQrAssetExporter } from '../../ports/IQrAssetExporter'
 import type { IQrContentBuilder } from '../../ports/IQrContentBuilder'
@@ -13,6 +14,7 @@ export interface GenerateModelDeps {
   qrBuilder?: IGeometryBuilder
   qrContentBuilder?: IQrContentBuilder
   qrAssetExporter?: IQrAssetExporter
+  imageConverter?: IImageConverter
 }
 
 function extractDepth(values: Record<string, ParameterValue>): number {
@@ -23,6 +25,31 @@ function extractDepth(values: Record<string, ParameterValue>): number {
   if (typeof values.depth === 'number') return values.depth
   return 10
 }
+
+const IMAGE_CONVERTER_FORMATS = ['png', 'jpg', 'jpeg', 'webp', 'svg', 'bmp'] as const satisfies readonly ImageFormat[]
+
+const IMAGE_CONVERTER_MIME_TYPES: Record<ImageFormat, string> = {
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  webp: 'image/webp',
+  svg: 'image/svg+xml',
+  bmp: 'image/bmp',
+}
+
+function isImageConverterOutputFormat(value: string): value is ImageFormat {
+  return IMAGE_CONVERTER_FORMATS.some((format) => format === value)
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max)
+}
+
+function getImageDownloadLabel(format: ImageFormat): string {
+  const label = format === 'jpg' ? 'JPG' : format.toUpperCase()
+  return `Baixar ${label} (imagem)`
+}
+
 
 function normalizeQrType(value: ParameterValue | undefined): string {
   if (value === 'Texto') return 'text'
@@ -240,6 +267,65 @@ export async function generateModel(
       templateParams: buildOpenScadTemplateParams(scadTemplate, values),
     })
     return { status: 'success', geometry }
+  }
+
+  if (renderStrategy.type === 'image-converter') {
+    if (!imageData) return { status: 'error', error: 'Selecione uma imagem antes de converter.' }
+    if (!deps.imageConverter) return { status: 'error', error: 'ImageConverterAdapter não disponível.' }
+
+    const outputFormat = typeof values.outputFormat === 'string' ? values.outputFormat : 'png'
+    const quality = clamp(typeof values.quality === 'number' ? values.quality / 100 : 0.85, 0.1, 1)
+    const scale = clamp(typeof values.scale === 'number' ? values.scale : 1, 0.5, 4)
+    const exportAsStl = typeof values.exportAsStl === 'boolean' ? values.exportAsStl : false
+
+    if (!isImageConverterOutputFormat(outputFormat)) {
+      return { status: 'error', error: `Formato não suportado: ${outputFormat}` }
+    }
+
+    const result: GenerationResult = {
+      status: 'success',
+      downloadFileName: `${model.slug}.${outputFormat === 'jpeg' ? 'jpg' : outputFormat}`,
+      downloadMimeType: IMAGE_CONVERTER_MIME_TYPES[outputFormat],
+      downloadLabel: getImageDownloadLabel(outputFormat),
+    }
+
+    const convertedData = await deps.imageConverter.convert(imageData, {
+      format: outputFormat,
+      quality,
+      scale,
+    })
+
+    if (outputFormat === 'svg') {
+      result.svgString = new TextDecoder().decode(convertedData)
+    } else {
+      const blob = new Blob([convertedData], { type: IMAGE_CONVERTER_MIME_TYPES[outputFormat] })
+      const url = URL.createObjectURL(blob)
+      result.pngDataUrl = url
+    }
+
+    // V2: Opcionalmente gerar STL também (reutilizar estratégia do cortador)
+    if (exportAsStl) {
+      const threshold = typeof values.stlThreshold === 'number' ? values.stlThreshold : 128
+      const stlHeight = typeof values.stlHeight === 'number' ? values.stlHeight : 5
+
+      try {
+        const filled = fillEnclosedRegions(imageData, threshold)
+        const traced = await deps.imageTracer.trace(filled, threshold)
+
+        if (traced.pathData) {
+          result.geometry = await deps.geometryBuilder.build({
+            pathData: traced.pathData,
+            targetSize: 70,
+            depth: stlHeight,
+            mode: 'solid',
+          })
+        }
+      } catch {
+        // A geracao de STL e opcional; a conversao de imagem continua se falhar.
+      }
+    }
+
+    return result
   }
 
   return { status: 'error', error: `Estratégia "${renderStrategy.type}" ainda não implementada.` }

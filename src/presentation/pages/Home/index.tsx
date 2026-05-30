@@ -3,7 +3,7 @@ import { ModelCard } from '../../components/ModelCard'
 import { APP_NAME, CATEGORY_LABELS } from '../../../shared/constants'
 import type { ModelCategory } from '../../../shared/types'
 
-const CATEGORIES: ModelCategory[] = ['cutters', 'stamps', 'keychains', 'signs', 'letters']
+const CATEGORIES: ModelCategory[] = ['cutters', 'stamps', 'keychains', 'signs', 'letters', 'utilities']
 
 export function Home() {
   return (

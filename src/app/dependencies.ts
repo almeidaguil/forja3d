@@ -1,4 +1,5 @@
 import { CanvasImageTracer } from '../infrastructure/tracer/CanvasImageTracer'
+import { ImageConverterAdapter } from '../infrastructure/tracer/ImageConverterAdapter'
 import { OpenScadGeometryBuilder } from '../infrastructure/openscad/OpenScadGeometryBuilder'
 import { HeightmapStampBuilder } from '../infrastructure/three/HeightmapStampBuilder'
 import { PotraceStampBuilder } from '../infrastructure/three/PotraceStampBuilder'
@@ -15,6 +16,7 @@ export function createAppDependencies(): AppDependencies {
   return {
     modelGenerator: {
       imageTracer: new CanvasImageTracer(),
+      imageConverter: new ImageConverterAdapter(),
       geometryBuilder: new OpenScadGeometryBuilder(),
       heightmapBuilder: new HeightmapStampBuilder(),
       potraceBuilder: new PotraceStampBuilder(),

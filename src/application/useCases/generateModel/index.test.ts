@@ -4,6 +4,7 @@ import type { ExtrudeConfig, IGeometryBuilder } from '../../ports/IGeometryBuild
 import type { IQrAssetExporter } from '../../ports/IQrAssetExporter'
 import type { IQrContentBuilder, QrContentBuildOptions } from '../../ports/IQrContentBuilder'
 import type { IImageTracer } from '../../ports/IImageTracer'
+import type { ConvertImageOptions, IImageConverter } from '../../ports/IImageConverter'
 import type { Model } from '../../../shared/types'
 
 class CapturingGeometryBuilder implements IGeometryBuilder {
@@ -31,6 +32,16 @@ class FakeQrAssetExporter implements IQrAssetExporter {
 
   async toPngDataUrl(content: string): Promise<string> {
     return `data:image/png;base64,${content}`
+  }
+}
+
+class FakeImageConverter implements IImageConverter {
+  readonly calls: ConvertImageOptions[] = []
+
+  async convert(_imageData: ImageData, options: ConvertImageOptions): Promise<ArrayBuffer> {
+    this.calls.push(options)
+    if (options.format === 'svg') return new TextEncoder().encode('<svg><path d="M0 0H10V1H0Z"/></svg>').buffer
+    return new TextEncoder().encode('converted').buffer
   }
 }
 
@@ -262,5 +273,83 @@ describe('generateModel openscad', () => {
         fontKey: 'Roboto',
       },
     })
+  })
+})
+
+describe('generateModel image-converter', () => {
+  const imageData = {
+    width: 1,
+    height: 1,
+    data: new Uint8ClampedArray([0, 0, 0, 255]),
+  } as ImageData
+
+  function createImageConverterModel(): Model {
+    return {
+      id: 'image-converter',
+      slug: 'image-converter',
+      title: 'Conversor de Imagens',
+      description: 'Teste',
+      category: 'utilities',
+      renderStrategy: { type: 'image-converter', imageProcessing: 'canvas' },
+      parameters: [],
+      creditsRequired: 1,
+    }
+  }
+
+  it('retorna sucesso com arquivo convertido mesmo sem STL', async () => {
+    const imageConverter = new FakeImageConverter()
+
+    const result = await generateModel(createImageConverterModel(), {
+      outputFormat: 'webp',
+      quality: 120,
+      scale: 10,
+      exportAsStl: false,
+    }, imageData, {
+      imageTracer: unusedImageTracer,
+      geometryBuilder: unusedGeometryBuilder,
+      imageConverter,
+    })
+
+    expect(result.status).toBe('success')
+    expect(result.geometry).toBeUndefined()
+    expect(result.pngDataUrl).toMatch(/^blob:/)
+    expect(result.downloadFileName).toBe('image-converter.webp')
+    expect(result.downloadMimeType).toBe('image/webp')
+    expect(result.downloadLabel).toBe('Baixar WEBP (imagem)')
+    expect(imageConverter.calls[0]).toMatchObject({
+      format: 'webp',
+      quality: 1,
+      scale: 4,
+    })
+  })
+
+  it('rejeita formato sem encoder real na V1', async () => {
+    const result = await generateModel(createImageConverterModel(), {
+      outputFormat: 'pdf',
+    }, imageData, {
+      imageTracer: unusedImageTracer,
+      geometryBuilder: unusedGeometryBuilder,
+      imageConverter: new FakeImageConverter(),
+    })
+
+    expect(result).toEqual({ status: 'error', error: 'Formato não suportado: pdf' })
+  })
+
+  it('gera SVG com path vetorial para slicers', async () => {
+    const imageConverter = new FakeImageConverter()
+
+    const result = await generateModel(createImageConverterModel(), {
+      outputFormat: 'svg',
+    }, imageData, {
+      imageTracer: unusedImageTracer,
+      geometryBuilder: unusedGeometryBuilder,
+      imageConverter,
+    })
+
+    expect(result.status).toBe('success')
+    expect(result.svgString).toContain('<path d="M0 0H10V1H0Z"')
+    expect(result.svgString).not.toContain('<image')
+    expect(result.downloadFileName).toBe('image-converter.svg')
+    expect(imageConverter.calls[0]).toMatchObject({ format: 'svg' })
   })
 })
